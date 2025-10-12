@@ -11,9 +11,8 @@ import (
 func Generate(numPlayers, numPlots, numWeights int) {
 
 	cfg := Config{
-		Plots:     numPlots,
-		Adjacency: make(map[int][]int),
-		Players:   make([]PlayerConfig, numPlayers),
+		Plots:   numPlots,
+		Players: make([]PlayerConfig, numPlayers),
 	}
 
 	desirability := make([]int, numPlots)

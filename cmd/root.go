@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/sbraitsch/plotter/optimizer"
+	"github.com/sbraitsch/plotter/internal/optimizer"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )

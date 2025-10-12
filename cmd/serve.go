@@ -7,6 +7,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 
 	"github.com/joho/godotenv"
 	"github.com/sbraitsch/plotter/internal/api"
@@ -25,13 +26,20 @@ var serveCmd = &cobra.Command{
 		ctx := context.Background()
 
 		pool := db.Connect(ctx, cfg.DBURL)
+		defer pool.Close()
 
-		srv := api.Server{DB: pool}
+		db.RunMigrations(cfg.DBURL)
+		adminUUID, err := db.SeedAdminPlayer(ctx, pool)
+		if err != nil {
+			log.Fatalf("failed to seed admin: %v", err)
+		}
+		log.Printf("Admin UUID: %s", adminUUID)
 
+		srv := api.Server{DB: pool, AdminUUID: adminUUID}
 		addr := fmt.Sprintf(":%s", cfg.Port)
 
-		log.Printf("Starting server on %s\n", addr)
-		if err := srv.Start(addr); err != nil {
+		log.Printf("Server listening on port %s\n", addr)
+		if err := http.ListenAndServe(addr, srv.Router()); err != nil {
 			log.Fatal(err)
 		}
 	},

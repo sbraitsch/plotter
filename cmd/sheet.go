@@ -3,7 +3,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/sbraitsch/plotter/optimizer"
+	"github.com/sbraitsch/plotter/internal/optimizer"
 	"github.com/spf13/cobra"
 )
 

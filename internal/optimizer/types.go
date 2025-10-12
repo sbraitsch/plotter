@@ -1,9 +1,8 @@
 package optimizer
 
 type Config struct {
-	Plots     int            `mapstructure:"plots"`
-	Adjacency map[int][]int  `mapstructure:"adjacency"`
-	Players   []PlayerConfig `mapstructure:"players"`
+	Plots   int            `mapstructure:"plots"`
+	Players []PlayerConfig `mapstructure:"players"`
 }
 
 type PlayerConfig struct {

@@ -1,0 +1,2 @@
+DROP TABLE IF EXISTS player_mappings;
+DROP TABLE IF EXISTS players;

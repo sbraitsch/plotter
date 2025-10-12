@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "plotter",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}
