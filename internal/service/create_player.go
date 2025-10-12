@@ -2,38 +2,64 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
+	"errors"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-type CreatePlayerRequest struct {
+type InitializePlayersRequest struct {
+	Names []string `json:"names"`
+}
+
+type AddPlayerRequest struct {
 	Name string `json:"name"`
 }
 
-func CreatePlayer(db *pgxpool.Pool, w http.ResponseWriter, r *http.Request) {
-
-	var req CreatePlayerRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "invalid request", http.StatusBadRequest)
-		return
-	}
-	if req.Name == "" {
-		http.Error(w, "missing name", http.StatusBadRequest)
-		return
+func AddPlayer(ctx context.Context, db *pgxpool.Pool, name string) (*Player, error) {
+	if name == "" {
+		return nil, errors.New("no player name provided")
 	}
 
 	var uuid string
-	err := db.QueryRow(context.Background(),
-		`INSERT INTO players (name) VALUES ($1) RETURNING uuid`, req.Name).Scan(&uuid)
+	err := db.QueryRow(ctx,
+		`INSERT INTO players (name) VALUES ($1)
+             ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+             RETURNING uuid`,
+		name,
+	).Scan(&uuid)
 	if err != nil {
-		http.Error(w, "failed to create player: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 
-	json.NewEncoder(w).Encode(map[string]string{
-		"name": req.Name,
-		"uuid": uuid,
-	})
+	return &Player{Name: name, UUID: uuid}, nil
+}
+
+func InitializePlayerData(ctx context.Context, db *pgxpool.Pool, names []string) ([]Player, error) {
+
+	if len(names) == 0 {
+		return nil, errors.New("no player names provided")
+	}
+
+	result := make([]Player, 0, len(names))
+
+	for _, name := range names {
+		var uuid string
+
+		err := db.QueryRow(ctx,
+			`INSERT INTO players (name) VALUES ($1)
+             ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+             RETURNING uuid`,
+			name,
+		).Scan(&uuid)
+		if err != nil {
+			return nil, err
+		}
+
+		result = append(result, Player{
+			Name: name,
+			UUID: uuid,
+		})
+	}
+
+	return result, nil
 }

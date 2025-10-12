@@ -2,36 +2,72 @@ package service
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ListPlayers(db *pgxpool.Pool, w http.ResponseWriter, r *http.Request) {
+func ListPlayerIds(ctx context.Context, db *pgxpool.Pool) ([]Player, error) {
 
-	rows, err := db.Query(context.Background(), `SELECT name, uuid FROM players ORDER BY name`)
+	rows, err := db.Query(ctx, `SELECT name, uuid FROM players ORDER BY name`)
 	if err != nil {
-		http.Error(w, "failed to fetch players: "+err.Error(), http.StatusInternalServerError)
-		return
+		return nil, err
 	}
 	defer rows.Close()
-
-	type Player struct {
-		Name string `json:"name"`
-		UUID string `json:"uuid"`
-	}
 
 	var players []Player
 	for rows.Next() {
 		var p Player
 		if err := rows.Scan(&p.Name, &p.UUID); err != nil {
-			http.Error(w, "failed to read player: "+err.Error(), http.StatusInternalServerError)
-			return
+			return nil, err
 		}
 		players = append(players, p)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(players)
+	return players, nil
+}
+
+func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerData, error) {
+	rows, err := db.Query(ctx, `
+        SELECT p.name, pm.from_num, pm.to_num
+        FROM players p
+        LEFT JOIN player_mappings pm ON pm.player_id = p.id
+        ORDER BY p.name, pm.from_num
+    `)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	playerMap := make(map[string]*PlayerData)
+
+	for rows.Next() {
+		var name string
+		var fromNum, toNum *int
+		if err := rows.Scan(&name, &fromNum, &toNum); err != nil {
+			return nil, err
+		}
+
+		if _, exists := playerMap[name]; !exists {
+			playerMap[name] = &PlayerData{
+				Name:     name,
+				PlotData: make(map[int]int),
+			}
+		}
+
+		if fromNum != nil && toNum != nil {
+			playerMap[name].PlotData[*fromNum] = *toNum
+		}
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	// Convert map to slice
+	result := make([]PlayerData, 0, len(playerMap))
+	for _, pd := range playerMap {
+		result = append(result, *pd)
+	}
+
+	return result, nil
 }

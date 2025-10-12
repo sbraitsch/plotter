@@ -26,7 +26,7 @@ func init() {
 	rootCmd.AddCommand(sheetCmd)
 
 	// Flags
-	generateCmd.Flags().StringVarP(
+	sheetCmd.Flags().StringVarP(
 		&url,
 		"sheet",
 		"s",
