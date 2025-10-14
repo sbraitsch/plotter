@@ -29,13 +29,13 @@ var serveCmd = &cobra.Command{
 		defer pool.Close()
 
 		db.RunMigrations(cfg.DBURL)
-		adminUUID, err := db.SeedAdminPlayer(ctx, pool)
+		admins, err := db.SeedAdminPlayers(ctx, pool)
 		if err != nil {
 			log.Fatalf("failed to seed admin: %v", err)
 		}
-		log.Printf("Admin UUID: %s", adminUUID)
+		log.Printf("Admin UUID: %s", admins)
 
-		srv := api.Server{DB: pool, AdminUUID: adminUUID}
+		srv := api.Server{DB: pool, AdminUUIDs: admins}
 		addr := fmt.Sprintf(":%s", cfg.Port)
 
 		log.Printf("Server listening on port %s\n", addr)

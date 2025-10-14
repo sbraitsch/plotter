@@ -9,19 +9,63 @@ import (
 	"github.com/sbraitsch/plotter/internal/service"
 )
 
-func (s *Server) Update(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"status": "update successful"})
+type InitializePlayersRequest struct {
+	Players []service.PlayerInit `json:"players"`
 }
 
-func (s *Server) Pull(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]string{"data": "pull result"})
+type AddPlayerRequest struct {
+	Name string `json:"name"`
+}
 
+type PlotMappingRequest struct {
+	Name     string      `json:"name"`
+	PlotData map[int]int `json:"plotData"`
+}
+
+func (s *Server) Validate(w http.ResponseWriter, r *http.Request) {
+	player, err := service.Validate(r.Context(), s.DB, r)
+	if err != nil {
+		http.Error(w, "Failed to add player: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	render.JSON(w, r, player)
+}
+
+func (s *Server) UpdateMapping(w http.ResponseWriter, r *http.Request) {
+	req := &PlotMappingRequest{}
+
+	if err := render.Decode(r, req); err != nil {
+		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	player, err := service.Validate(r.Context(), s.DB, r)
+
+	if err != nil {
+		http.Error(w, "Token Validation Failed", http.StatusUnauthorized)
+		return
+	}
+
+	err = service.ValidateNameToken(player.Name, req.Name)
+
+	if err != nil {
+		http.Error(w, "Token and Player do not match: "+err.Error(), http.StatusUnauthorized)
+		return
+	}
+
+	err = service.UpdatePlayerData(r.Context(), s.DB, req.Name, req.PlotData)
+
+	if err != nil {
+		http.Error(w, "Failed to update player data: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	s.ListPlayerData(w, r)
 }
 
 func (s *Server) AddPlayer(w http.ResponseWriter, r *http.Request) {
-	req := &service.AddPlayerRequest{}
+	req := &AddPlayerRequest{}
 
 	if err := render.Decode(r, req); err != nil {
 		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
@@ -38,14 +82,14 @@ func (s *Server) AddPlayer(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) InitializePlayerData(w http.ResponseWriter, r *http.Request) {
-	req := &service.InitializePlayersRequest{}
+	req := &InitializePlayersRequest{}
 
 	if err := render.Decode(r, req); err != nil {
 		http.Error(w, "Invalid request body: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	players, err := service.InitializePlayerData(r.Context(), s.DB, req.Names)
+	players, err := service.InitializePlayerData(r.Context(), s.DB, req.Players)
 	if err != nil {
 		http.Error(w, "Failed to initialize player data: "+err.Error(), http.StatusInternalServerError)
 		return

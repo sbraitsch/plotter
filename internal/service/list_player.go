@@ -6,7 +6,12 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func ListPlayerIds(ctx context.Context, db *pgxpool.Pool) ([]Player, error) {
+type PlayerDataResponse struct {
+	Name     string      `json:"name"`
+	PlotData map[int]int `json:"plotData"`
+}
+
+func ListPlayerIds(ctx context.Context, db *pgxpool.Pool) ([]PlayerResponse, error) {
 
 	rows, err := db.Query(ctx, `SELECT name, uuid FROM players ORDER BY name`)
 	if err != nil {
@@ -14,9 +19,9 @@ func ListPlayerIds(ctx context.Context, db *pgxpool.Pool) ([]Player, error) {
 	}
 	defer rows.Close()
 
-	var players []Player
+	var players []PlayerResponse
 	for rows.Next() {
-		var p Player
+		var p PlayerResponse
 		if err := rows.Scan(&p.Name, &p.UUID); err != nil {
 			return nil, err
 		}
@@ -26,11 +31,12 @@ func ListPlayerIds(ctx context.Context, db *pgxpool.Pool) ([]Player, error) {
 	return players, nil
 }
 
-func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerData, error) {
+func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerDataResponse, error) {
 	rows, err := db.Query(ctx, `
         SELECT p.name, pm.from_num, pm.to_num
         FROM players p
         LEFT JOIN player_mappings pm ON pm.player_id = p.id
+		WHERE p.name <> 'admin'
         ORDER BY p.name, pm.from_num
     `)
 	if err != nil {
@@ -38,7 +44,7 @@ func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerData, error)
 	}
 	defer rows.Close()
 
-	playerMap := make(map[string]*PlayerData)
+	playerMap := make(map[string]*PlayerDataResponse)
 
 	for rows.Next() {
 		var name string
@@ -48,7 +54,7 @@ func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerData, error)
 		}
 
 		if _, exists := playerMap[name]; !exists {
-			playerMap[name] = &PlayerData{
+			playerMap[name] = &PlayerDataResponse{
 				Name:     name,
 				PlotData: make(map[int]int),
 			}
@@ -64,7 +70,7 @@ func ListPlayerData(ctx context.Context, db *pgxpool.Pool) ([]PlayerData, error)
 	}
 
 	// Convert map to slice
-	result := make([]PlayerData, 0, len(playerMap))
+	result := make([]PlayerDataResponse, 0, len(playerMap))
 	for _, pd := range playerMap {
 		result = append(result, *pd)
 	}

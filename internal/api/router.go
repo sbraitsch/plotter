@@ -9,8 +9,8 @@ import (
 )
 
 type Server struct {
-	DB        *pgxpool.Pool
-	AdminUUID string
+	DB         *pgxpool.Pool
+	AdminUUIDs []string
 }
 
 func (s *Server) Router() http.Handler {
@@ -19,20 +19,20 @@ func (s *Server) Router() http.Handler {
 	r.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"https://plotter.sbraitsch.dev", "http://localhost:3000"}, // Production
 		AllowedMethods:   []string{"GET", "POST", "OPTIONS"},
-		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token", "X-Token"},
 		ExposedHeaders:   []string{"Link"},
 		AllowCredentials: false,
 		MaxAge:           300,
 	}))
 
 	// Public endpoints
-	r.Post("/update", s.Update)
-	r.Get("/pull", s.Pull)
 	r.Get("/playerdata", s.ListPlayerData)
+	r.Get("/validate", s.Validate)
+	r.Post("/update", s.UpdateMapping)
 
 	// Admin-only endpoints
 	r.Group(func(admin chi.Router) {
-		admin.Use(AdminAuth(s.AdminUUID))
+		admin.Use(AdminAuth(s.AdminUUIDs))
 		admin.Post("/create", s.AddPlayer)
 		admin.Get("/playerids", s.ListPlayerIds)
 		admin.Post("/initialize", s.InitializePlayerData)
