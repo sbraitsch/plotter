@@ -25,4 +25,4 @@ export async function fetchWithAuth<T = void>(
 export const BASE_URL =
   typeof window !== "undefined" && window.location.hostname === "localhost"
     ? "http://localhost:8080"
-    : "/api";
+    : "https://plotter.sbraitsch.dev/api";
