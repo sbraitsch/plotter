@@ -100,11 +100,12 @@ func (s *Server) LockAssignments(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Failed to unlock community", http.StatusInternalServerError)
 		}
 		w.WriteHeader(http.StatusOK)
+		log.Printf("Community %s locked.", user.CommunityId)
 		return
 	}
 	community, err := service.GetCommunity(r.Context(), s.DB)
 	if err != nil {
-		http.Error(w, "Failed to run optimizer", http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch community to optimize", http.StatusInternalServerError)
 		return
 	}
 
@@ -112,13 +113,16 @@ func (s *Server) LockAssignments(w http.ResponseWriter, r *http.Request) {
 
 	err = service.SaveAssignmentsAndLock(r.Context(), s.DB, assignments, community.Id)
 	if err != nil {
+		log.Printf("Error persisting assignments: %v", err)
+		http.Error(w, "Failed to persist assignments and lock community", http.StatusInternalServerError)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	if err := json.NewEncoder(w).Encode(assignments); err != nil {
-		log.Println("Failed to write response:", err)
+		log.Printf("Failed to write response: %v", err)
 	}
+	log.Printf("Community %s locked.", community.Id)
 }
 func (s *Server) GetAssignments(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middleware.CtxUser).(middleware.UserContext)

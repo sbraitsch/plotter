@@ -48,19 +48,21 @@ export default function MapComponent() {
     (player) => player.battletag === user?.battletag,
   );
 
-  useEffect(() => {
-    playerRef.current = player;
-  }, [playerData]);
-
-  useEffect(() => {
-    lockedRef.current = user?.community.locked ?? false;
+  const rerenderFeatures = () => {
     if (!mapInstanceRef.current) return;
     if (plotAssignments?.length > 0) {
       createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
     } else {
+      console.log("rerender badges");
       updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
     }
-  }, [user?.community.locked]);
+  };
+
+  useEffect(() => {
+    playerRef.current = player;
+    lockedRef.current = user?.community.locked ?? false;
+    rerenderFeatures();
+  }, [user?.community.locked, playerData, plotAssignments]);
 
   const updatePlayerPlot = (plotId: number, value: number) => {
     if (user?.community.locked) return;
@@ -113,8 +115,9 @@ export default function MapComponent() {
       !mapRef.current ||
       mapInstanceRef.current ||
       (!playerRef.current && plotAssignments.length == 0)
-    )
+    ) {
       return;
+    }
 
     const vectorSource = new VectorSource({
       features: plotData.map((plot, index) => {

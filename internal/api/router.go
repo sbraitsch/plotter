@@ -52,6 +52,8 @@ func (s *Server) Router() http.Handler {
 		MaxAge:           300,
 	}))
 
+	r.Use(middleware.LoggingMiddleware)
+
 	//oauth
 	r.Get("/auth/bnet/login", s.BattleNetLogin)
 	r.Get("/auth/bnet/callback", s.BattleNetCallback)
