@@ -3,20 +3,19 @@ package config
 import (
 	"log"
 	"os"
+
+	"github.com/sbraitsch/plotter/internal/api"
 )
 
-type Config struct {
-	DBURL string
-	Port  string
-}
-
-func Load() Config {
-	cfg := Config{
-		DBURL: os.Getenv("DATABASE_URL"),
-		Port:  os.Getenv("PORT"),
+func Load() api.Config {
+	cfg := api.Config{
+		DbUrl:        os.Getenv("DATABASE_URL"),
+		Port:         os.Getenv("PORT"),
+		ClientId:     os.Getenv("CLIENT_ID"),
+		ClientSecret: os.Getenv("CLIENT_SECRET"),
 	}
 
-	if cfg.DBURL == "" {
+	if cfg.DbUrl == "" {
 		log.Fatal("DATABASE_URL not set")
 	}
 	if cfg.Port == "" {

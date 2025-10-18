@@ -1,0 +1,69 @@
+.bnet-login-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #0c1629; /* subtle dark background */
+}
+
+.bnet-login-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background-color: #009ae4; /* Battle.net blue */
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 8px rgba(0, 154, 228, 0.3);
+}
+
+.bnet-login-btn:hover {
+    background-color: #00b4ff;
+    box-shadow: 0 6px 12px rgba(0, 154, 228, 0.5);
+    transform: translateY(-1px);
+}
+
+.bnet-login-btn:active {
+    background-color: #0081c9;
+    transform: translateY(0);
+}
+
+.bnet-icon {
+    width: 24px;
+    height: 24px;
+    filter: brightness(0) invert(1); /* makes sure it's visible on blue background */
+}
+
+.error {
+    color: rgb(158, 29, 29);
+    font-weight: bold;
+    font-size: 0.85em;
+    margin-bottom: 10px;
+}
+
+.spinner-container {
+    margin-top: 12px;
+    display: flex;
+    justify-content: center;
+}
+
+.spinner {
+    width: 24px;
+    height: 24px;
+    border: 4px solid var(--background);
+    border-top-color: var(--bnet-blue);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}

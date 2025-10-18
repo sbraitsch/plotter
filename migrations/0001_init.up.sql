@@ -1,17 +1,38 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
-CREATE TABLE players (
-    id SERIAL PRIMARY KEY,
-    uuid UUID NOT NULL DEFAULT gen_random_uuid(),
-    name TEXT UNIQUE NOT NULL,
-    created_at TIMESTAMPTZ DEFAULT now()
+CREATE TABLE IF NOT EXISTS communities (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name VARCHAR(50) UNIQUE,
+    realm VARCHAR(50),
+    officer_rank INT DEFAULT 0,
+    locked BOOLEAN DEFAULT FALSE
 );
 
-CREATE TABLE player_mappings (
+CREATE TABLE IF NOT EXISTS users (
+    battletag VARCHAR(50) PRIMARY KEY,
+    community_id UUID REFERENCES communities(id) ON DELETE CASCADE,
+    community_rank INT DEFAULT 100,
+    session_id UUID UNIQUE,
+    access_token TEXT NOT NULL,
+    expiry TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE plot_mappings (
     id SERIAL PRIMARY KEY,
-    player_id INT NOT NULL REFERENCES players(id) ON DELETE CASCADE,
-    from_num INT NOT NULL CHECK (from_num BETWEEN 1 AND 53),
-    to_num   INT NOT NULL CHECK (to_num BETWEEN 1 AND 53),
-    UNIQUE (player_id, from_num),
-    UNIQUE (player_id, to_num)
+    battletag VARCHAR(50) NOT NULL REFERENCES users(battletag) ON DELETE CASCADE,
+    plot_id INT NOT NULL CHECK (plot_id BETWEEN 1 AND 53),
+    priority   INT NOT NULL CHECK (priority BETWEEN 1 AND 53),
+    UNIQUE (battletag, plot_id),
+    UNIQUE (battletag, priority)
+);
+
+CREATE TABLE assignments (
+    id SERIAL PRIMARY KEY,
+    battletag VARCHAR(50) NOT NULL REFERENCES users(battletag) ON DELETE CASCADE,
+    community_id UUID REFERENCES communities(id) ON DELETE CASCADE,
+    plot_id INT NOT NULL,
+    plot_score INT NOT NULL,
+    UNIQUE (battletag)
 );

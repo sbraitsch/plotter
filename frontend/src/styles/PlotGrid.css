@@ -1,0 +1,30 @@
+.plot-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 0.5rem;
+}
+
+.plot-node {
+    aspect-ratio: 1 / 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--highlight-light);
+    border-radius: 0.2rem;
+    font-size: 0.6rem;
+    color: rgb(185, 183, 183);
+    transition:
+        background-color 0.2s ease,
+        border-color 0.2s ease;
+    cursor: pointer;
+}
+
+.plot-node--active {
+    color: black;
+    font-weight: bold;
+    border: none;
+}
+
+.plot-node:hover {
+    transform: scale(1.1);
+}

@@ -1,2 +1,4 @@
-DROP TABLE IF EXISTS player_mappings;
-DROP TABLE IF EXISTS players;
+DROP TABLE IF EXISTS assignments;
+DROP TABLE IF EXISTS plot_mappings;
+DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS communities;
