@@ -79,6 +79,7 @@ const CommunitySelection: React.FC = () => {
           ))}
         </ul>
       )}
+      <div className="spacer"></div>
       <button
         className="bnet-submit-btn"
         disabled={!selected}

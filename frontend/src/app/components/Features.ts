@@ -52,7 +52,7 @@ export function createBadgeStyle(
 
   const badgeStyle = new Style({
     image: new OlCircle({
-      radius: 8,
+      radius: 10,
       fill: new OlFill({ color: getGradientColor(prioritized) }),
       stroke: new Stroke({
         color: "#000000",
@@ -62,7 +62,7 @@ export function createBadgeStyle(
     }),
     text: new OlText({
       text: prioritized.toString(),
-      font: "bold 9px Geist, sans-serif",
+      font: "bold 11px Geist, sans-serif",
       fill: new OlFill({ color: "black" }),
       textAlign: "center",
       textBaseline: "middle",
@@ -122,7 +122,7 @@ export function createAssignmentStyle(
 
     text: new OlText({
       text: ass.player.toString(), // longer text allowed
-      font: "bold 10px Geist, sans-serif",
+      font: "bold 14px Geist, sans-serif",
       fill: new OlFill({ color: "black" }),
       stroke: new Stroke({ color: getGradientColor(ass.score), width: 2 }), // optional outline for readability
       textAlign: "center",

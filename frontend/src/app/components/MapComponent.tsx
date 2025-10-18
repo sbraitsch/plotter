@@ -53,7 +53,6 @@ export default function MapComponent() {
     if (plotAssignments?.length > 0) {
       createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
     } else {
-      console.log("rerender badges");
       updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
     }
   };
@@ -106,7 +105,7 @@ export default function MapComponent() {
       anchor: [0.5, 25],
       anchorXUnits: "fraction",
       anchorYUnits: "pixels",
-      src: "/house_pop_40.png",
+      src: "/house_pop_48.png",
     }),
   });
 
@@ -157,7 +156,7 @@ export default function MapComponent() {
       view: new View({
         projection: projection,
         center: getCenter(imageExtent),
-        zoom: 2.5,
+        zoom: 3.2,
         maxZoom: 6,
       }),
     });

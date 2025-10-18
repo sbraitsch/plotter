@@ -42,7 +42,7 @@ func TokenAuth(db *pgxpool.Pool) func(http.Handler) http.Handler {
 				communityName   sql.NullString
 				officerRank     sql.NullInt64
 				communityLocked sql.NullBool
-				communityRank   int
+				communityRank   sql.NullInt64
 				accessToken     string
 				expiry          time.Time
 			)
@@ -78,7 +78,7 @@ func TokenAuth(db *pgxpool.Pool) func(http.Handler) http.Handler {
 				Battletag:            battletag,
 				CommunityId:          communityId.String,
 				CommunityName:        communityName.String,
-				CommunityRank:        communityRank,
+				CommunityRank:        int(communityRank.Int64),
 				CommunityOfficerRank: int(officerRank.Int64),
 				CommunityLocked:      communityLocked.Bool,
 				AccessToken:          accessToken,
