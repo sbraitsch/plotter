@@ -104,9 +104,9 @@
 
 .notification-popup {
     position: fixed;
+    background: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
     top: 10vh;
-    background-color: var(--highlight-light);
-    color: black;
+    color: var(--highlight-light);
     padding: 12px 20px;
     border-radius: 12px;
     animation: fadeInOut 3s forwards;

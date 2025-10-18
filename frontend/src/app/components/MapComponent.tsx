@@ -54,6 +54,12 @@ export default function MapComponent() {
 
   useEffect(() => {
     lockedRef.current = user?.community.locked ?? false;
+    if (!mapInstanceRef.current) return;
+    if (plotAssignments?.length > 0) {
+      createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
+    } else {
+      updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
+    }
   }, [user?.community.locked]);
 
   const updatePlayerPlot = (plotId: number, value: number) => {
@@ -101,15 +107,6 @@ export default function MapComponent() {
       src: "/house_pop_40.png",
     }),
   });
-
-  useEffect(() => {
-    if (!mapInstanceRef.current) return;
-    if (plotAssignments?.length > 0) {
-      createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
-    } else {
-      updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
-    }
-  }, [playerData, plotAssignments]);
 
   useEffect(() => {
     if (
@@ -163,6 +160,12 @@ export default function MapComponent() {
     });
 
     mapInstanceRef.current = map;
+
+    if (plotAssignments?.length > 0) {
+      createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
+    } else {
+      updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
+    }
 
     map.on("click", function (evt) {
       map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
