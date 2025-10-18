@@ -2,6 +2,7 @@ package api
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
@@ -27,7 +28,7 @@ func NewServer(db *pgxpool.Pool, cfg Config) Server {
 	bnetOAuthConfig := &oauth2.Config{
 		ClientID:     cfg.ClientId,
 		ClientSecret: cfg.ClientSecret,
-		RedirectURL:  "http://localhost:8080/auth/bnet/callback",
+		RedirectURL:  os.Getenv("REDIRECT_URL"),
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://eu.battle.net/oauth/authorize",
 			TokenURL: "https://eu.battle.net/oauth/token",

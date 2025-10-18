@@ -22,14 +22,14 @@ func (s *Server) BattleNetCallback(w http.ResponseWriter, r *http.Request) {
 
 	token, err := s.Oauth.Exchange(ctx, code)
 	if err != nil {
-		http.Error(w, "Failed to exchange token: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to exchange token", http.StatusInternalServerError)
 		return
 	}
 
 	client := s.Oauth.Client(ctx, token)
 	resp, err := client.Get("https://oauth.battle.net/oauth/userinfo")
 	if err != nil {
-		http.Error(w, "Failed to fetch profile: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to fetch profile", http.StatusInternalServerError)
 		return
 	}
 	defer resp.Body.Close()
@@ -39,7 +39,7 @@ func (s *Server) BattleNetCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewDecoder(resp.Body).Decode(&profile); err != nil {
-		http.Error(w, "Failed to decode profile: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Failed to decode profile", http.StatusInternalServerError)
 		return
 	}
 
