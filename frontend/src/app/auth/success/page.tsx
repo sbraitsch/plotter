@@ -1,8 +1,8 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const AuthSuccess = () => {
+function AuthSuccessInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -15,11 +15,16 @@ const AuthSuccess = () => {
     }
 
     localStorage.setItem("session_token", token);
-
     router.replace("/");
-  }, [router]);
+  }, [router, searchParams]);
 
   return <div>Logging in...</div>;
-};
+}
 
-export default AuthSuccess;
+export default function AuthSuccess() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AuthSuccessInner />
+    </Suspense>
+  );
+}

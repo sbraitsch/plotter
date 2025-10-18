@@ -48,7 +48,7 @@ const CommunitySelection: React.FC = () => {
         if (!prev) return prev;
         return {
           ...prev,
-          community: { id: com.id, name: com.name },
+          community: { id: com.id, name: com.name, locked: com.locked },
         };
       });
     } catch (err) {
