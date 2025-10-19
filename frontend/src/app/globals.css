@@ -11,6 +11,14 @@
     --bnet-blue: #0074e0;
     --admin-from: #111211;
     --admin-to: #171a18;
+
+    --active-btn: linear-gradient(
+        135deg,
+        rgba(223, 225, 242, 1) 0%,
+        rgba(91, 145, 199, 1) 100%
+    );
+
+    --petrol: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
 }
 
 html,

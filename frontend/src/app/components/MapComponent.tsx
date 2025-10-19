@@ -27,6 +27,7 @@ import ControlPanel from "./ControlPanel";
 import { createAssignmentBadge, updateBadgeStyles } from "./Features";
 import MapHoverPopup from "./Popup";
 import { Assignment, getAssignedPlots } from "../api/optimizer";
+import TargetedModal from "./ TargetedModal";
 
 /**
  * OpenLayers Map Component for displaying a static image with clickable pins.
@@ -36,12 +37,32 @@ export default function MapComponent() {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef<Map>(null);
 
+  const [contextDirty, setContextDirty] = useState(false);
+
+  const [isTargetedModalOpen, setIsTargetedModalOpen] = useState(false);
+  const [selectedPlot, setSelectedPlot] = useState<number | undefined>(
+    undefined,
+  );
+  const handleOpenModal = (plotId: number) => {
+    setSelectedPlot(plotId);
+    setIsTargetedModalOpen(true);
+  };
+
+  const handleModalSubmit = async (plot: number, prio: number) => {
+    forcePlotUpdate(plot, prio);
+    setSelectedPlot(undefined);
+    setIsTargetedModalOpen(false);
+  };
+
   const { user } = useAuth();
   const lockedRef = useRef(user?.community.locked ?? false);
 
+  const [targetedMode, setTargetedMode] = useState(false);
+  const targetedRef = useRef(targetedMode);
+
   const [playerData, setPlayerData] = useState<PlayerData[]>([]);
   const [plotAssignments, setPlotAssignments] = useState<Assignment[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [mapReady, setMapReady] = useState<boolean>(false);
 
   const playerRef = useRef<PlayerData | undefined>(undefined);
   const player = playerData?.find(
@@ -58,23 +79,80 @@ export default function MapComponent() {
   };
 
   useEffect(() => {
+    targetedRef.current = targetedMode;
+  }, [targetedMode]);
+
+  useEffect(() => {
     playerRef.current = player;
     lockedRef.current = user?.community.locked ?? false;
     rerenderFeatures();
   }, [user?.community.locked, playerData, plotAssignments]);
 
-  const updatePlayerPlot = (plotId: number, value: number) => {
-    if (user?.community.locked) return;
+  const clearPlayerMappings = () => {
     setPlayerData((prev) =>
       prev.map((p) =>
         p.battletag === user?.battletag
           ? {
               ...p,
-              plotData: { ...p.plotData, [plotId]: value },
+              plotData: [],
             }
           : p,
       ),
     );
+    setContextDirty(true);
+  };
+
+  const forcePlotUpdate = (plotId: number, value: number) => {
+    if (user?.community.locked) return;
+    setPlayerData((prev) =>
+      prev.map((p) => {
+        if (p.battletag !== user?.battletag) return p;
+
+        const newPlotData = Object.fromEntries(
+          Object.entries(p.plotData).filter(([_, v]) => v !== value),
+        );
+
+        newPlotData[plotId] = value;
+
+        return {
+          ...p,
+          plotData: newPlotData,
+        };
+      }),
+    );
+    setContextDirty(true);
+  };
+
+  const updatePlayerPlot = (plotId: number, value: number) => {
+    if (user?.community.locked) return;
+    if (playerRef.current?.plotData[plotId]) {
+      setPlayerData((prev) =>
+        prev.map((p) =>
+          p.battletag === user?.battletag
+            ? {
+                ...p,
+                plotData: Object.fromEntries(
+                  Object.entries(p.plotData).filter(
+                    ([id]) => Number(id) !== plotId,
+                  ),
+                ),
+              }
+            : p,
+        ),
+      );
+    } else {
+      setPlayerData((prev) =>
+        prev.map((p) =>
+          p.battletag === user?.battletag
+            ? {
+                ...p,
+                plotData: { ...p.plotData, [plotId]: value },
+              }
+            : p,
+        ),
+      );
+    }
+    setContextDirty(true);
   };
 
   useEffect(() => {
@@ -91,8 +169,6 @@ export default function MapComponent() {
         );
       } catch (err: any) {
         console.error(err);
-      } finally {
-        setLoading(false);
       }
     }
     fetchData();
@@ -162,6 +238,7 @@ export default function MapComponent() {
     });
 
     mapInstanceRef.current = map;
+    setMapReady(true);
 
     if (plotAssignments?.length > 0) {
       createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
@@ -170,6 +247,7 @@ export default function MapComponent() {
     }
 
     map.on("click", function (evt) {
+      let nextPrio = getLowestFreePriority(playerRef.current!);
       map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
         if (
           feature &&
@@ -177,7 +255,12 @@ export default function MapComponent() {
           !lockedRef.current
         ) {
           const plot = feature.get("plot") as PlotData;
-          updatePlayerPlot(plot.id, getLowestFreePriority(playerRef.current!));
+          if (!targetedRef.current) {
+            updatePlayerPlot(plot.id, nextPrio);
+            nextPrio++;
+          } else {
+            handleOpenModal(plot.id);
+          }
         }
       });
     });
@@ -191,14 +274,27 @@ export default function MapComponent() {
           user={user}
           playerData={player}
           updatePlayerPlot={updatePlayerPlot}
+          clearPlayerMappings={clearPlayerMappings}
           updatePlotAssignments={setPlotAssignments}
+          targetedMode={targetedMode}
+          setTargetedMode={setTargetedMode}
+          contextDirty={contextDirty}
         />
         {/* Map Container */}
         <div ref={mapRef} id="map" className="map-container-style" />
-        {mapInstanceRef.current && (
+        {mapReady && mapInstanceRef.current && (
           <MapHoverPopup map={mapInstanceRef.current} />
         )}
       </div>
+      {playerRef.current && (
+        <TargetedModal
+          isOpen={isTargetedModalOpen}
+          onClose={() => setIsTargetedModalOpen(false)}
+          onSubmit={handleModalSubmit}
+          plot={selectedPlot!}
+          player={playerRef.current}
+        />
+      )}
     </div>
   );
 }

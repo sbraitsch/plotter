@@ -4,22 +4,22 @@
     box-sizing: border-box;
     width: 20%;
     max-width: 20%;
-    height: 90vh;
+    height: 92vh;
     border-radius: 0.5rem;
-    gap: 1em;
+    gap: 0.8em;
 }
 
 .spacer {
     flex: 1;
 }
 
-.admin-controls {
+.btn-group {
     display: flex;
     gap: 0.5em;
     flex-wrap: wrap;
 }
 
-.admin-controls .btn {
+.btn-group .btn {
     flex: 1;
 }
 
@@ -28,7 +28,6 @@
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
-    font-weight: bold;
     transition: all 0.2s ease-in-out;
     display: inline-flex;
     align-items: center;
@@ -37,16 +36,20 @@
     background-color: var(--admin-to);
     padding: 0.5em 0.5em;
     font-size: 0.8em;
-    font-weight: normal;
     box-sizing: border-box;
 }
 
 .admin-btn:hover {
-    color: var(--sync);
+    box-shadow: 0 0 6px var(--sync);
+}
+
+.active-btn {
+    background: var(--active-btn);
+    color: var(--background);
 }
 
 .btag-tile {
-    background: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
+    background: var(--petrol);
     color: var(--highlight-light);
     border-radius: 0.5rem;
     user-select: none;
@@ -66,13 +69,12 @@
     font-size: 1.5em;
     font-weight: 600;
     color: var(--highlight-light);
-    text-shadow: 0 0 8px rgba(0, 136, 255, 0.7);
     margin-top: 3px;
     margin-bottom: 3px;
 }
 
 .btag-community {
-    font-size: 0.5rem;
+    font-size: 0.6rem;
     text-transform: uppercase;
     color: var(--highlight-light);
     letter-spacing: 1px;
@@ -84,20 +86,25 @@
     cursor: pointer;
     font-weight: bold;
     transition:
-        background-color 0.5s ease-in-out,
+        background-color 0.3s ease-in-out,
         color 0.3s ease-in-out;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
+    background: var(--petrol);
     color: var(--highlight-light);
     padding: 12px 24px;
     margin-bottom: 1rem;
     font-size: 1.25em;
 }
 
-.btn:hover {
+.btn:disabled {
+    background: none;
+    background-color: var(--admin-to);
+}
+
+.btn:hover:not(:disabled) {
     background: var(--sync);
     box-shadow: 0 0 6px var(--sync);
     color: var(--background);
@@ -106,7 +113,7 @@
 .notification-popup {
     font-family: var(--font-geist-sans), sans-serif;
     position: fixed;
-    background: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
+    background: var(--petrol);
     top: 10vh;
     color: var(--highlight-light);
     padding: 12px 20px;

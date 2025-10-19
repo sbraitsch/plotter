@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -17,18 +18,6 @@ func UpdatePlayerData(ctx context.Context, db *pgxpool.Pool, mapping map[int]int
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
-
-	for plotId, priority := range mapping {
-		_, err = tx.Exec(ctx, `
-			INSERT INTO plot_mappings (battletag, plot_id, priority)
-			VALUES ($1, $2, $3)
-			ON CONFLICT (battletag, plot_id)
-			DO UPDATE SET priority = EXCLUDED.priority
-		`, user.Battletag, plotId, priority)
-		if err != nil {
-			return fmt.Errorf("failed to save mapping %d → %d: %w", plotId, priority, err)
-		}
-	}
 
 	plotIDs := make([]any, 0, len(mapping))
 	for plotID := range mapping {
@@ -51,11 +40,25 @@ func UpdatePlayerData(ctx context.Context, db *pgxpool.Pool, mapping map[int]int
 		)
 		_, err = tx.Exec(ctx, query, args...)
 		if err != nil {
-			return fmt.Errorf("failed to remove mappings: %w", err)
+			log.Fatalf("failed to remove mappings: %v", err)
+			return err
 		}
 	} else {
 		_, err := tx.Exec(ctx, `DELETE FROM plot_mappings WHERE battletag=$1`, user.Battletag)
 		if err != nil {
+			return err
+		}
+	}
+
+	for plotId, priority := range mapping {
+		_, err = tx.Exec(ctx, `
+			INSERT INTO plot_mappings (battletag, plot_id, priority)
+			VALUES ($1, $2, $3)
+			ON CONFLICT (battletag, plot_id)
+			DO UPDATE SET priority = EXCLUDED.priority
+		`, user.Battletag, plotId, priority)
+		if err != nil {
+			log.Fatalf("failed to save mapping %d → %d: %v", plotId, priority, err)
 			return err
 		}
 	}
