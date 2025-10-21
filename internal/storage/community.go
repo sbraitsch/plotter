@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"math"
@@ -229,17 +230,38 @@ func (s *StorageClient) InsertGuilds(ctx context.Context, guilds []model.Communi
 }
 
 func (s *StorageClient) SetOfficerRank(ctx context.Context, communityId string, officerRank int) error {
-	_, err := s.db.Exec(ctx,
-		`UPDATE communities
-			 SET officer_rank = $1
-			 WHERE id = $2`,
-		officerRank, communityId,
-	)
+	res, err := s.db.Exec(ctx, `
+			UPDATE communities
+			SET officer_rank = $1
+			WHERE id = $2::uuid
+		`, officerRank, communityId)
 	if err != nil {
-		log.Printf("Failed to update community gating: %v", err)
+		log.Printf("❌ Failed to update community officer_rank: %v", err)
 		return err
 	}
-	log.Printf("Community %s should be updated to %d", communityId, officerRank)
+
+	rows := res.RowsAffected()
+	log.Printf("✅ Updated %d rows for community %s -> rank %d", rows, communityId, officerRank)
+
+	// Now log current state of the table
+	rowsData, err := s.db.Query(ctx, `SELECT id, officer_rank, name FROM communities`)
+	if err != nil {
+		log.Printf("❌ Failed to query communities: %v", err)
+		return err
+	}
+	defer rowsData.Close()
+
+	log.Println("📋 Current communities table:")
+	for rowsData.Next() {
+		var id string
+		var rank sql.NullInt32
+		var name sql.NullString
+		if err := rowsData.Scan(&id, &rank, &name); err != nil {
+			log.Printf("  ⚠️ Failed to scan row: %v", err)
+			continue
+		}
+		log.Printf("  - ID: %s | Name: %s | officer_rank: %v", id, name.String, rank.Int32)
+	}
 
 	return nil
 }
