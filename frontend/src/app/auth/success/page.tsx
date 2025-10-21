@@ -9,7 +9,6 @@ function AuthSuccessInner() {
   useEffect(() => {
     const token = searchParams.get("token");
 
-    console.log(token);
     if (!token || typeof token !== "string") {
       router.replace("/");
       return;

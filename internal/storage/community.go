@@ -235,6 +235,11 @@ func (s *StorageClient) SetOfficerRank(ctx context.Context, communityId string, 
 			 WHERE id = $2`,
 		officerRank, communityId,
 	)
+	if err != nil {
+		log.Printf("Failed to update community gating: %v", err)
+		return err
+	}
+	log.Printf("Community %s should be updated to %d", communityId, officerRank)
 
-	return err
+	return nil
 }

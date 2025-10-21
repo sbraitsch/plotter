@@ -1,7 +1,6 @@
 package api
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
@@ -43,7 +42,6 @@ func (api *userAPIImpl) getUserByToken(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	json.NewEncoder(w).Encode(user)
 	render.JSON(w, r, user)
 }
 
