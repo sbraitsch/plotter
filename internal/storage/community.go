@@ -117,7 +117,7 @@ func (s *StorageClient) PersistAndLock(ctx context.Context, assignments []model.
 	args := []any{}
 
 	for i, a := range assignments {
-		idx := i * 2
+		idx := i * 4
 		sqlStr += fmt.Sprintf("($%d, $%d, $%d, $%d),", idx+1, idx+2, idx+3, idx+4)
 		args = append(args, a.Battletag, communityId, a.Plot, a.Score)
 	}
