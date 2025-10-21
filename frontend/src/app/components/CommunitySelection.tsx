@@ -6,10 +6,18 @@ import { BASE_URL, fetchWithAuth } from "../api";
 import { useAuth, User } from "../context/AuthContext";
 import { Community } from "../api/validate";
 
+interface CommunityResponse {
+  id: string;
+  name: string;
+  realm: string;
+  locked: boolean;
+}
 const CommunitySelection: React.FC = () => {
   const { user, setUser } = useAuth();
-  const [options, setOptions] = useState<Community[]>([]);
-  const [selected, setSelected] = useState<Community | undefined>(undefined);
+  const [options, setOptions] = useState<CommunityResponse[]>([]);
+  const [selected, setSelected] = useState<CommunityResponse | undefined>(
+    undefined,
+  );
 
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +26,7 @@ const CommunitySelection: React.FC = () => {
     const fetchOptions = async () => {
       setLoading(true);
       try {
-        const communities = await fetchWithAuth<Community[]>(
+        const communities = await fetchWithAuth<CommunityResponse[]>(
           `${BASE_URL}/auth/bnet/guilds`,
         );
 
@@ -34,11 +42,11 @@ const CommunitySelection: React.FC = () => {
     fetchOptions();
   }, []);
 
-  const handleSelect = (com: Community) => {
+  const handleSelect = (com: CommunityResponse) => {
     setSelected(com);
   };
 
-  const handleSubmit = async (com: Community) => {
+  const handleSubmit = async (com: CommunityResponse) => {
     try {
       await fetchWithAuth<Community>(`${BASE_URL}/community/join/${com.id}`, {
         method: "POST",
@@ -48,7 +56,12 @@ const CommunitySelection: React.FC = () => {
         if (!prev) return prev;
         return {
           ...prev,
-          community: { id: com.id, name: com.name, locked: com.locked },
+          community: {
+            id: com.id,
+            name: com.name,
+            realm: com.realm,
+            locked: com.locked,
+          },
         };
       });
     } catch (err) {

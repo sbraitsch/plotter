@@ -11,9 +11,10 @@ type MemberData struct {
 }
 
 type Community struct {
-	Id    string
-	Name  string
-	Realm string
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Realm  string `json:"realm"`
+	Locked bool   `json:"locked"`
 }
 
 type Roster struct {

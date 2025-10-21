@@ -17,7 +17,7 @@ func (e *TokenExpiredError) Error() string {
 }
 
 func tokenFetcher(ctx context.Context) (*oauth2.Token, error) {
-	user, ok := ctx.Value(middleware.CtxUser).(model.User)
+	user, ok := ctx.Value(middleware.CtxUser).(*model.User)
 
 	if !ok {
 		return nil, errors.New("Invalid user context")

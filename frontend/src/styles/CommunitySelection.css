@@ -94,7 +94,9 @@
 }
 
 .bnet-list-item:hover {
-    background-color: #292b33;
+    background: var(--sync);
+    box-shadow: 0 0 6px var(--sync);
+    color: var(--background);
     transform: scale(1.05);
 }
 

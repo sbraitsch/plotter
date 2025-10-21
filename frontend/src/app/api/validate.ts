@@ -9,6 +9,7 @@ export interface ValidateResponse {
 export type Community = {
   id: string;
   name: string;
+  realm: string;
   locked: boolean;
 };
 

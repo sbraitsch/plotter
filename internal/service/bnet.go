@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -14,7 +15,7 @@ import (
 
 type BnetService interface {
 	GetProfile(ctx context.Context) (*model.WowProfile, error)
-	GetGuildRoster(ctx context.Context, community model.Community) (*model.Roster, error)
+	GetGuildRoster(ctx context.Context, community *model.Community) (*model.Roster, error)
 	GetUserGuilds(ctx context.Context) ([]model.Community, error)
 }
 
@@ -42,7 +43,7 @@ func (s *bnetServiceImpl) GetProfile(ctx context.Context) (*model.WowProfile, er
 	return &profile, nil
 }
 
-func (s *bnetServiceImpl) GetGuildRoster(ctx context.Context, community model.Community) (*model.Roster, error) {
+func (s *bnetServiceImpl) GetGuildRoster(ctx context.Context, community *model.Community) (*model.Roster, error) {
 	guildSlug := strings.ToLower(strings.ReplaceAll(community.Name, " ", "-"))
 	rosterURL := fmt.Sprintf(
 		"https://eu.api.blizzard.com/data/wow/guild/%s/%s/roster?namespace=profile-eu&locale=en_US",
@@ -65,15 +66,18 @@ func (s *bnetServiceImpl) GetGuildRoster(ctx context.Context, community model.Co
 func (s *bnetServiceImpl) GetUserGuilds(ctx context.Context) ([]model.Community, error) {
 	profile, err := s.GetProfile(ctx)
 	if err != nil {
+		log.Printf("Failed to fetch profile as guild data prerequisite: %v", err)
 		return nil, err
 	}
 
 	guilds, err := getUniqueGuilds(profile, s.client)
 	if err != nil {
+		log.Printf("Failed to fetch unique guilds: %v", err)
 		return nil, err
 	}
 	saved, err := s.storage.InsertGuilds(ctx, guilds)
 	if err != nil {
+		log.Printf("Failed to insert guilds into database: %v", err)
 		return nil, err
 	}
 	return saved, nil

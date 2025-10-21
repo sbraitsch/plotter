@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"strings"
@@ -12,7 +13,13 @@ import (
 )
 
 func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*model.User, error) {
-	var user model.User
+	var (
+		battletag, communityName, communityID, accessToken sql.NullString
+		officerRank, communityRank                         sql.NullInt32
+		locked                                             sql.NullBool
+		expiry                                             sql.NullTime
+	)
+
 	err := s.db.QueryRow(ctx,
 		`SELECT
 			u.battletag,
@@ -28,12 +35,34 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 			ON u.community_id = c.id
 		WHERE u.session_id = $1`,
 		token,
-	).Scan(&user.Battletag, &user.Community.Id, &user.Community.Name, &user.Community.OfficerRank, &user.Community.Locked, &user.CommunityRank, &user.AccessToken, &user.Expiry)
+	).Scan(
+		&battletag,
+		&communityID,
+		&communityName,
+		&officerRank,
+		&locked,
+		&communityRank,
+		&accessToken,
+		&expiry,
+	)
+
 	if err != nil {
 		return nil, err
 	}
+	user := &model.User{
+		Battletag: battletag.String,
+		Community: model.UserCommunity{
+			Id:          communityID.String,
+			Name:        communityName.String,
+			OfficerRank: int(communityRank.Int32),
+			Locked:      locked.Bool,
+		},
+		CommunityRank: int(communityRank.Int32),
+		AccessToken:   accessToken.String,
+		Expiry:        expiry.Time,
+	}
 
-	return &user, nil
+	return user, nil
 }
 
 func (s *StorageClient) RegisterUser(ctx context.Context, battletag string, token *oauth2.Token) (string, error) {

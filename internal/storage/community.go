@@ -60,7 +60,7 @@ func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) 
 
 func (s *StorageClient) GetCommunity(ctx context.Context, communityId string) (*model.Community, error) {
 	var community model.Community
-	err := s.db.QueryRow(ctx, `SELECT id, name, realm FROM communities WHERE id = $1`, communityId).Scan(&community.Id, &community.Name, community.Realm)
+	err := s.db.QueryRow(ctx, `SELECT id, name, realm FROM communities WHERE id = $1`, communityId).Scan(&community.Id, &community.Name, &community.Realm)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get community info: %w", err)
 	}
@@ -201,7 +201,7 @@ func (s *StorageClient) InsertGuilds(ctx context.Context, guilds []model.Communi
 	}
 
 	rows, err := tx.Query(ctx,
-		`SELECT id, name
+		`SELECT id, name, realm, locked
 		     FROM communities
 			 WHERE name = ANY($1)`,
 		names,
@@ -214,7 +214,7 @@ func (s *StorageClient) InsertGuilds(ctx context.Context, guilds []model.Communi
 	var saved []model.Community
 	for rows.Next() {
 		var c model.Community
-		if err := rows.Scan(&c.Id, &c.Name); err != nil {
+		if err := rows.Scan(&c.Id, &c.Name, &c.Realm, &c.Locked); err != nil {
 			return nil, err
 		}
 		saved = append(saved, c)

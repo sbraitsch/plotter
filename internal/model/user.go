@@ -4,13 +4,13 @@ import "time"
 
 type User struct {
 	Battletag     string
-	Community     community
+	Community     UserCommunity
 	CommunityRank int
 	AccessToken   string
 	Expiry        time.Time
 }
 
-type community struct {
+type UserCommunity struct {
 	Id          string
 	Name        string
 	OfficerRank int
