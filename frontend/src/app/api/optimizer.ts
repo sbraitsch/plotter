@@ -8,7 +8,7 @@ export interface Assignment {
 
 export async function getOptimizedAssignments(): Promise<Assignment[]> {
   try {
-    const url = `${BASE_URL}/optimize`;
+    const url = `${BASE_URL}/community/optimize`;
     const data = await fetchWithAuth<Assignment[]>(url);
     return data;
   } catch (err) {
@@ -18,7 +18,7 @@ export async function getOptimizedAssignments(): Promise<Assignment[]> {
 
 export async function optimizeAndLock(): Promise<Assignment[]> {
   try {
-    const url = `${BASE_URL}/lock`;
+    const url = `${BASE_URL}/community/lock`;
     const data = await fetchWithAuth<Assignment[]>(url, { method: "POST" });
     return data;
   } catch (err) {
@@ -28,7 +28,7 @@ export async function optimizeAndLock(): Promise<Assignment[]> {
 
 export async function getAssignedPlots(): Promise<Assignment[]> {
   try {
-    const url = `${BASE_URL}/assignments`;
+    const url = `${BASE_URL}/community/assignments`;
     const data = await fetchWithAuth<Assignment[]>(url);
     return data;
   } catch (err) {

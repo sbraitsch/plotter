@@ -27,7 +27,7 @@ export async function getCommunityData(): Promise<PlayerData[]> {
 export async function updatePlayerData(
   update: PlayerUpdate,
 ): Promise<PlayerData[]> {
-  const url = `${BASE_URL}/update`;
+  const url = `${BASE_URL}/user/update`;
 
   const data = await fetchWithAuth<CommunityData>(url, {
     method: "POST",

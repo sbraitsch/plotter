@@ -11,12 +11,26 @@ import VectorLayer from "ol/layer/Vector.js";
 import VectorSource from "ol/source/Vector";
 import { getGradientColor } from "../utils";
 import { Assignment } from "../api/optimizer";
+import Icon from "ol/style/Icon";
 
-export function updateBadgeStyles(
-  map: Map,
-  player: PlayerData | undefined,
-  baseStyle: Style,
-) {
+const makeHouse = (size: number) => {
+  return new Icon({
+    anchor: [0.5, 25],
+    anchorXUnits: "fraction",
+    anchorYUnits: "pixels",
+    src: `/house_pop_${size}.png`,
+  });
+};
+
+export const BASE_STYLE = new Style({
+  image: makeHouse(48),
+});
+
+export const HOVER_STYLE = new Style({
+  image: makeHouse(64),
+});
+
+export function updateBadgeStyles(map: Map, player: PlayerData | undefined) {
   // find the first vector layer
   const vectorLayer = map
     .getLayers()
@@ -31,23 +45,20 @@ export function updateBadgeStyles(
     .getSource()
     ?.getFeatures()
     .forEach((feature) => {
-      feature.setStyle(
-        createBadgeStyle(feature, player, baseStyle, getGradientColor),
-      );
+      feature.setStyle(createBadgeStyle(feature, player, getGradientColor));
     });
 }
 
 export function createBadgeStyle(
   feature: Feature<Point>,
   player: PlayerData | undefined,
-  baseStyle: Style,
   getGradientColor: (index: number) => string,
 ): Style[] {
   const pinId = (feature.get("id") as number) + 1;
   const prioritized = player?.plotData[pinId];
 
   if (prioritized === undefined) {
-    return [baseStyle];
+    return [BASE_STYLE];
   }
 
   const badgeStyle = new Style({
@@ -71,14 +82,10 @@ export function createBadgeStyle(
     zIndex: 1,
   });
 
-  return [badgeStyle, baseStyle];
+  return [badgeStyle, BASE_STYLE];
 }
 
-export function createAssignmentBadge(
-  map: Map,
-  assignments: Assignment[],
-  baseStyle: Style,
-) {
+export function createAssignmentBadge(map: Map, assignments: Assignment[]) {
   const vectorLayer = map
     .getLayers()
     .getArray()
@@ -93,12 +100,7 @@ export function createAssignmentBadge(
     ?.getFeatures()
     .forEach((feature) => {
       feature.setStyle(
-        createAssignmentStyle(
-          feature,
-          assignments,
-          baseStyle,
-          getGradientColor,
-        ),
+        createAssignmentStyle(feature, assignments, getGradientColor),
       );
     });
 }
@@ -106,14 +108,13 @@ export function createAssignmentBadge(
 export function createAssignmentStyle(
   feature: Feature<Point>,
   assignments: Assignment[],
-  baseStyle: Style,
   getGradientColor: (index: number) => string,
 ): Style[] {
   const pinId = (feature.get("id") as number) + 1;
   const ass = assignments.find((ass) => ass.plot === pinId);
 
   if (ass === undefined) {
-    return [baseStyle];
+    return [BASE_STYLE];
   }
 
   const badgeStyle = new Style({
@@ -133,5 +134,5 @@ export function createAssignmentStyle(
     zIndex: 1,
   });
 
-  return [badgeStyle, baseStyle];
+  return [badgeStyle, BASE_STYLE];
 }

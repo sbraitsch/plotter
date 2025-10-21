@@ -13,7 +13,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/sbraitsch/plotter/internal/api"
 	"github.com/sbraitsch/plotter/internal/config"
-	"github.com/sbraitsch/plotter/internal/db"
+	"github.com/sbraitsch/plotter/internal/storage"
 	"github.com/spf13/cobra"
 )
 
@@ -26,10 +26,10 @@ var serveCmd = &cobra.Command{
 		cfg := config.Load()
 		ctx := context.Background()
 
-		pool := db.ConnectWithRetry(ctx, cfg.DbUrl, 10, 2*time.Second)
+		pool := storage.ConnectWithRetry(ctx, cfg.DbUrl, 10, 2*time.Second)
 		defer pool.Close()
 
-		db.RunMigrations(cfg.DbUrl)
+		storage.RunMigrations(cfg.DbUrl)
 
 		srv := api.NewServer(pool, cfg)
 		addr := fmt.Sprintf(":%s", cfg.Port)

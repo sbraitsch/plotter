@@ -19,7 +19,7 @@ const CommunitySelection: React.FC = () => {
       setLoading(true);
       try {
         const communities = await fetchWithAuth<Community[]>(
-          `${BASE_URL}/guilds`,
+          `${BASE_URL}/auth/bnet/guilds`,
         );
 
         setOptions(communities);
@@ -40,7 +40,7 @@ const CommunitySelection: React.FC = () => {
 
   const handleSubmit = async (com: Community) => {
     try {
-      await fetchWithAuth<Community>(`${BASE_URL}/join?community=${com.id}`, {
+      await fetchWithAuth<Community>(`${BASE_URL}/community/join/${com.id}`, {
         method: "POST",
       });
 

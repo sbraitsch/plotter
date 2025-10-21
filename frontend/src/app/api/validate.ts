@@ -13,7 +13,7 @@ export type Community = {
 };
 
 export async function validateSession(): Promise<ValidateResponse> {
-  const url = `${BASE_URL}/validate`;
+  const url = `${BASE_URL}/user/validate`;
   const data = await fetchWithAuth<ValidateResponse>(url);
   return data;
 }

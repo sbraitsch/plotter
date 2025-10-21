@@ -54,7 +54,7 @@ export default function ControlPanel({
 
   const handleAdminModalSubmit = async (minRank: number) => {
     try {
-      await fetchWithAuth(`${BASE_URL}/config`, {
+      await fetchWithAuth(`${BASE_URL}/community/config`, {
         method: "POST",
         body: JSON.stringify({ minRank: minRank }),
       });

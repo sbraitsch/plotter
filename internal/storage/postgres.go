@@ -1,4 +1,4 @@
-package db
+package storage
 
 import (
 	"context"
@@ -7,6 +7,14 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+type StorageClient struct {
+	db *pgxpool.Pool
+}
+
+func NewStorageClient(db *pgxpool.Pool) *StorageClient {
+	return &StorageClient{db: db}
+}
 
 func ConnectWithRetry(ctx context.Context, dbURL string, maxRetries int, retryDelay time.Duration) *pgxpool.Pool {
 	var pool *pgxpool.Pool

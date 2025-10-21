@@ -3,6 +3,10 @@ import Overlay from "ol/Overlay";
 import { Map } from "ol";
 import "ol/ol.css";
 import { Point } from "ol/geom";
+import Feature from "ol/Feature.js";
+import { BASE_STYLE, HOVER_STYLE } from "./Features";
+import Icon from "ol/style/Icon";
+import Style from "ol/style/Style";
 
 interface MapHoverPopupProps {
   map?: Map;
@@ -11,6 +15,20 @@ interface MapHoverPopupProps {
 export default function MapHoverPopups({ map }: MapHoverPopupProps) {
   const popupRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<Overlay | null>(null);
+
+  const setFeatureImage = (feature: Feature<Point>, style: Style) => {
+    const currentStyles = feature.getStyle();
+    if (Array.isArray(currentStyles)) {
+      const scaled = currentStyles.map((s) => {
+        const img = s.getImage?.();
+        if (img instanceof Icon) {
+          return style;
+        }
+        return s;
+      });
+      feature.setStyle(scaled);
+    }
+  };
 
   useEffect(() => {
     if (!map || !popupRef.current) return;
@@ -24,8 +42,23 @@ export default function MapHoverPopups({ map }: MapHoverPopupProps) {
 
     map.addOverlay(overlayRef.current);
 
+    let lastFeature: any = null;
+
     const handlePointerMove = (evt: any) => {
-      const feature = map.forEachFeatureAtPixel(evt.pixel, (feat) => feat);
+      const feature =
+        map.forEachFeatureAtPixel(
+          evt.pixel,
+          (feat): Feature<Point> | undefined => {
+            if (
+              feat instanceof Feature &&
+              feat.getGeometry() instanceof Point
+            ) {
+              return feat as Feature<Point>;
+            }
+            return undefined;
+          },
+        ) ?? null;
+
       const mapEl = map.getTargetElement() as HTMLElement;
       mapEl.style.cursor = feature ? "pointer" : "";
 
@@ -34,12 +67,26 @@ export default function MapHoverPopups({ map }: MapHoverPopupProps) {
         const coords = pointGeometry.getCoordinates();
         const pinId = feature.get("plot").id;
 
+        if (feature !== lastFeature) {
+          if (feature) {
+            setFeatureImage(feature, HOVER_STYLE);
+          }
+          if (lastFeature) {
+            setFeatureImage(lastFeature, BASE_STYLE);
+          }
+          lastFeature = feature;
+        }
+
         if (overlayRef.current && coords) {
           popupRef.current!.innerHTML = `Plot #${pinId}`;
           overlayRef.current.setPosition(coords);
         }
       } else {
         overlayRef.current?.setPosition(undefined);
+        if (lastFeature) {
+          setFeatureImage(lastFeature, BASE_STYLE);
+          lastFeature = null;
+        }
       }
     };
 

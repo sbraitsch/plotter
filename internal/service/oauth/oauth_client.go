@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/sbraitsch/plotter/internal/middleware"
+	"github.com/sbraitsch/plotter/internal/model"
 	"golang.org/x/oauth2"
 )
 
@@ -16,7 +17,7 @@ func (e *TokenExpiredError) Error() string {
 }
 
 func tokenFetcher(ctx context.Context) (*oauth2.Token, error) {
-	user, ok := ctx.Value(middleware.CtxUser).(middleware.UserContext)
+	user, ok := ctx.Value(middleware.CtxUser).(model.User)
 
 	if !ok {
 		return nil, errors.New("Invalid user context")

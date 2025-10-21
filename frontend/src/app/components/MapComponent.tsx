@@ -10,8 +10,6 @@ import Point from "ol/geom/Point.js";
 import ImageLayer from "ol/layer/Image.js";
 import VectorLayer from "ol/layer/Vector.js";
 import VectorSource from "ol/source/Vector.js";
-import Style from "ol/style/Style.js";
-// We only need the type imports for the rest of the styles/events
 import { getCenter } from "ol/extent";
 import "ol/ol.css";
 import { Projection } from "ol/proj.js";
@@ -19,15 +17,18 @@ import Static from "ol/source/ImageStatic.js";
 import { PlotData, plotData } from "../data/PlotData";
 
 import "@/styles/MapStyles.css";
-import Icon from "ol/style/Icon";
 import { getCommunityData, PlayerData } from "../api/player";
 import { useAuth } from "../context/AuthContext";
 import { getLowestFreePriority } from "../utils";
 import ControlPanel from "./ControlPanel";
-import { createAssignmentBadge, updateBadgeStyles } from "./Features";
+import {
+  BASE_STYLE,
+  createAssignmentBadge,
+  updateBadgeStyles,
+} from "./Features";
 import MapHoverPopup from "./Popup";
 import { Assignment, getAssignedPlots } from "../api/optimizer";
-import TargetedModal from "./ TargetedModal";
+import TargetedModal from "./TargetedModal";
 
 /**
  * OpenLayers Map Component for displaying a static image with clickable pins.
@@ -72,9 +73,9 @@ export default function MapComponent() {
   const rerenderFeatures = () => {
     if (!mapInstanceRef.current) return;
     if (plotAssignments?.length > 0) {
-      createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
+      createAssignmentBadge(mapInstanceRef.current, plotAssignments);
     } else {
-      updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
+      updateBadgeStyles(mapInstanceRef.current, playerRef.current);
     }
   };
 
@@ -176,14 +177,6 @@ export default function MapComponent() {
 
   const imageUrl = "/housing_map.jpg";
   const imageExtent = [0, 0, 3840, 2560];
-  const baseStyle = new Style({
-    image: new Icon({
-      anchor: [0.5, 25],
-      anchorXUnits: "fraction",
-      anchorYUnits: "pixels",
-      src: "/house_pop_48.png",
-    }),
-  });
 
   useEffect(() => {
     if (
@@ -202,7 +195,7 @@ export default function MapComponent() {
           id: index,
           plot: plot,
         });
-        feature.setStyle(baseStyle);
+        feature.setStyle(BASE_STYLE);
         return feature;
       }),
     });
@@ -241,9 +234,9 @@ export default function MapComponent() {
     setMapReady(true);
 
     if (plotAssignments?.length > 0) {
-      createAssignmentBadge(mapInstanceRef.current, plotAssignments, baseStyle);
+      createAssignmentBadge(mapInstanceRef.current, plotAssignments);
     } else {
-      updateBadgeStyles(mapInstanceRef.current, playerRef.current, baseStyle);
+      updateBadgeStyles(mapInstanceRef.current, playerRef.current);
     }
 
     map.on("click", function (evt) {

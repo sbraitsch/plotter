@@ -122,7 +122,20 @@ export default function TargetedModal({
           <h2 className="modal-title">Modify Priority</h2>
 
           <div className="modal-field">
-            <label htmlFor="priority">Set the priority for Plot #{plot}</label>
+            <label
+              htmlFor="priority"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+              }}
+            >
+              Set the priority for{" "}
+              <img
+                src={"./house_pop_40.png"}
+                style={{ width: 28, height: 28, marginLeft: 4 }}
+              />{" "}
+              <span style={{ fontWeight: "bold" }}> #{plot}</span>
+            </label>
             <input
               id="priority"
               ref={inputRef}
@@ -153,7 +166,7 @@ export default function TargetedModal({
             </>
           ) : (
             <button type="submit" className="submit-btn" disabled={!!error}>
-              Submit
+              Confirm
             </button>
           )}
         </form>

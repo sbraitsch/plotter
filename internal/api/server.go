@@ -10,6 +10,7 @@ import (
 	"golang.org/x/oauth2"
 
 	"github.com/sbraitsch/plotter/internal/middleware"
+	"github.com/sbraitsch/plotter/internal/storage"
 )
 
 type Config struct {
@@ -54,27 +55,24 @@ func (s *Server) Router() http.Handler {
 
 	r.Use(middleware.LoggingMiddleware)
 
-	//oauth
-	r.Get("/auth/bnet/login", s.BattleNetLogin)
-	r.Get("/auth/bnet/callback", s.BattleNetCallback)
+	storageClient := storage.NewStorageClient(s.DB)
+	tokenMiddleware := middleware.TokenAuth(storageClient)
+	adminMiddleware := middleware.AdminAuth(storageClient)
+	userAPI := NewUserAPI(storageClient)
+	communityAPI := NewCommunityAPI(storageClient)
+	authApi := NewAuthAPI(storageClient, s.Oauth)
 
-	// user endpoints
-	r.Group(func(user chi.Router) {
-		user.Use(middleware.TokenAuth(s.DB))
-		user.Get("/community", s.GetCommunity)
-		user.Get("/assignments", s.GetAssignments)
-		user.Post("/join", s.JoinCommunity)
-		user.Get("/guilds", s.GetUserGuilds)
-		user.Get("/validate", s.Validate)
-		user.Post("/update", s.UpdateMapping)
+	r.Route("/user", func(r chi.Router) {
+		r.Use(tokenMiddleware)
+		r.Mount("/", userAPI.Routes())
 	})
 
-	// admin-only endpoints
-	r.Group(func(admin chi.Router) {
-		admin.Use(middleware.AdminAuth(s.DB))
-		admin.Get("/optimize", s.RunOptimizer)
-		admin.Post("/lock", s.LockAssignments)
-		admin.Post("/config", s.SetOfficerRank)
+	r.Route("/community", func(r chi.Router) {
+		r.Mount("/", communityAPI.Routes(tokenMiddleware, adminMiddleware))
+	})
+
+	r.Route("/auth", func(r chi.Router) {
+		r.Mount("/bnet", authApi.Routes(tokenMiddleware))
 	})
 
 	r.Get("/healthz", func(w http.ResponseWriter, _ *http.Request) {
