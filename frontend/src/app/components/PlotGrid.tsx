@@ -20,12 +20,6 @@ export default function PlotGrid({ player, updatePlayerPlot }: PlotGridProps) {
       )
     : [];
 
-  const handlePriorityUpdate = async (plotId: number) => {
-    const communities = await fetchWithAuth(
-      `${BASE_URL}/user/a464fb02-59a9-48db-ab2d-9bcf2804fe18`,
-    );
-  };
-
   return (
     <div className="plot-grid">
       {Array.from({ length: TOTAL_PLOTS }, (_, i) => {
@@ -38,7 +32,6 @@ export default function PlotGrid({ player, updatePlayerPlot }: PlotGridProps) {
             key={plotId}
             className={`plot-node ${priority ? "plot-node--active" : ""}`}
             style={priority ? { backgroundColor: bgColor } : undefined}
-            onClick={() => handlePriorityUpdate(plotId)}
           >
             {priority ?? plotId}
           </div>

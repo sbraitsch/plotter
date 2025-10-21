@@ -49,12 +49,13 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 	if err != nil {
 		return nil, err
 	}
+
 	user := &model.User{
 		Battletag: battletag.String,
 		Community: model.UserCommunity{
 			Id:          communityID.String,
 			Name:        communityName.String,
-			OfficerRank: int(communityRank.Int32),
+			OfficerRank: int(officerRank.Int32),
 			Locked:      locked.Bool,
 		},
 		CommunityRank: int(communityRank.Int32),

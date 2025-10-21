@@ -27,7 +27,7 @@ func NewUserAPI(storage *storage.StorageClient) UserAPI {
 func (api *userAPIImpl) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/", api.getUserByToken)
+	// r.Get("/", api.getUserByToken)
 	r.Get("/validate", api.validate)
 	r.Post("/update", api.updateMapping)
 
@@ -36,7 +36,6 @@ func (api *userAPIImpl) Routes() chi.Router {
 
 func (api *userAPIImpl) getUserByToken(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middleware.CtxUser).(*model.User)
-
 	render.JSON(w, r, user)
 }
 

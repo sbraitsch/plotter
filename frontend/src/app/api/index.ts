@@ -22,9 +22,7 @@ export async function fetchWithAuth<T = void>(
   return (await res.json()) as T;
 }
 
-// export const BASE_URL =
-//   typeof window !== "undefined" && window.location.hostname === "localhost"
-//     ? "http://localhost:8080"
-//     : "https://plotter.sbraitsch.dev/api";
-
-export const BASE_URL = "https://plotter.sbraitsch.dev/api";
+export const BASE_URL =
+  typeof window !== "undefined" && window.location.hostname === "localhost"
+    ? "http://localhost:8080"
+    : "https://plotter.sbraitsch.dev/api";
