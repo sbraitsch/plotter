@@ -27,7 +27,7 @@ func NewUserAPI(storage *storage.StorageClient) UserAPI {
 func (api *userAPIImpl) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	r.Get("/", api.getUserByToken)
+	r.Get("/{id}", api.getUserByToken)
 	r.Get("/validate", api.validate)
 	r.Post("/update", api.updateMapping)
 
@@ -36,7 +36,8 @@ func (api *userAPIImpl) Routes() chi.Router {
 
 func (api *userAPIImpl) getUserByToken(w http.ResponseWriter, r *http.Request) {
 
-	user, err := api.service.GetUserByToken(r.Context(), "asdas")
+	userId := chi.URLParam(r, "id")
+	user, err := api.service.GetUserByToken(r.Context(), userId)
 	if err != nil {
 		http.Error(w, "Failed to retrieve user associated with token", http.StatusInternalServerError)
 		return
