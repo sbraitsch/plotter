@@ -1,7 +1,8 @@
 import { BASE_URL, fetchWithAuth } from ".";
 
 export interface Assignment {
-  player: string;
+  btag: string;
+  char: string;
   plot: number;
   score: number;
 }

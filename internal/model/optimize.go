@@ -32,6 +32,7 @@ func buildAssignments(mapping []int, community *CommunityData) []Assignment {
 
 			assignments = append(assignments, Assignment{
 				Battletag: member.BattleTag,
+				Character: member.Character,
 				Plot:      plotId,
 				Score:     weight,
 			})

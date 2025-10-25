@@ -12,7 +12,7 @@ import (
 
 func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) (*model.CommunityData, error) {
 	rows, err := s.db.Query(ctx, `
-        SELECT u.battletag, pm.plot_id, pm.priority
+        SELECT u.battletag, u.char, pm.plot_id, pm.priority
         FROM users u
         LEFT JOIN plot_mappings pm ON pm.battletag = u.battletag
 			WHERE u.community_id = $1
@@ -28,21 +28,22 @@ func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) 
 	playerMap := make(map[string]*model.MemberData)
 
 	for rows.Next() {
-		var name string
+		var btag, char string
 		var fromNum, toNum *int
-		if err := rows.Scan(&name, &fromNum, &toNum); err != nil {
+		if err := rows.Scan(&btag, &char, &fromNum, &toNum); err != nil {
 			return nil, err
 		}
 
-		if _, exists := playerMap[name]; !exists {
-			playerMap[name] = &model.MemberData{
-				BattleTag: name,
+		if _, exists := playerMap[btag]; !exists {
+			playerMap[btag] = &model.MemberData{
+				BattleTag: btag,
+				Character: char,
 				PlotData:  make(map[int]int),
 			}
 		}
 
 		if fromNum != nil && toNum != nil {
-			playerMap[name].PlotData[*fromNum] = *toNum
+			playerMap[btag].PlotData[*fromNum] = *toNum
 		}
 	}
 
@@ -58,39 +59,70 @@ func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) 
 	return community, nil
 }
 
-func (s *StorageClient) GetCommunity(ctx context.Context, communityId string) (*model.Community, error) {
+func (s *StorageClient) GetCommunity(ctx context.Context, communityId string) (*model.Community, int, error) {
 	var community model.Community
-	err := s.db.QueryRow(ctx, `SELECT id, name, realm FROM communities WHERE id = $1`, communityId).Scan(&community.Id, &community.Name, &community.Realm)
+	requiredRank := 0
+	err := s.db.QueryRow(ctx, `SELECT id, name, realm, member_rank FROM communities WHERE id = $1`, communityId).
+		Scan(&community.Id, &community.Name, &community.Realm, &requiredRank)
 	if err != nil {
-		return nil, fmt.Errorf("failed to get community info: %w", err)
+		return nil, 0, fmt.Errorf("failed to get community info: %w", err)
 	}
-	return &community, nil
+	return &community, requiredRank, nil
 }
 
-func (s *StorageClient) JoinCommunity(ctx context.Context, user *model.User, communityId string, profile *model.WowProfile, roster *model.Roster) error {
+func (s *StorageClient) GetCommunitySize(ctx context.Context, communityId string) (int, error) {
+	var count int
+
+	err := s.db.QueryRow(ctx, `
+        SELECT COUNT(*)
+        FROM users
+        WHERE community_id = $1
+    `, communityId).Scan(&count)
+
+	if err != nil {
+		return 1000, fmt.Errorf("Failed to get community usage: %v", err)
+	}
+	return count, nil
+}
+
+func (s *StorageClient) JoinCommunity(
+	ctx context.Context,
+	user *model.User,
+	requiredRank int,
+	communityId string,
+	profile *model.WowProfile,
+	roster *model.Roster,
+) error {
 	minRank := math.MaxInt
+	var charName string
 	for _, acc := range profile.WowAccounts {
 		for _, char := range acc.Characters {
 			for _, member := range roster.Members {
 				if strings.EqualFold(char.Name, member.Character.Name) {
 					if member.Rank < minRank {
 						minRank = member.Rank
+						charName = member.Character.Name
 					}
 				}
 			}
 		}
 	}
 
+	if requiredRank < minRank {
+		log.Printf("Failed to join community. Rank requirement not fulfilled.")
+		return fmt.Errorf("Rank requirement not fulfilled.")
+	}
+
 	_, err := s.db.Exec(ctx,
 		`UPDATE users
-			 SET community_id = $1, community_rank = $2
-			 WHERE battletag = $3`,
-		communityId, minRank, user.Battletag,
+			 SET char = $1, community_id = $2, community_rank = $3
+			 WHERE battletag = $4`,
+		charName, communityId, minRank, user.Battletag,
 	)
 
 	if err != nil {
 		log.Printf("Failed to update community values for user %v:%v", user, err)
-		return err
+		return fmt.Errorf("Information could not be persisted.")
 	}
 
 	return nil
@@ -113,13 +145,13 @@ func (s *StorageClient) PersistAndLock(ctx context.Context, assignments []model.
 	}
 	defer tx.Rollback(ctx)
 
-	sqlStr := `INSERT INTO assignments (battletag, community_id, plot_id, plot_score) VALUES `
+	sqlStr := `INSERT INTO assignments (battletag, char, community_id, plot_id, plot_score) VALUES `
 	args := []any{}
 
 	for i, a := range assignments {
-		idx := i * 4
-		sqlStr += fmt.Sprintf("($%d, $%d, $%d, $%d),", idx+1, idx+2, idx+3, idx+4)
-		args = append(args, a.Battletag, communityId, a.Plot, a.Score)
+		idx := i * 5
+		sqlStr += fmt.Sprintf("($%d, $%d, $%d, $%d, $%d),", idx+1, idx+2, idx+3, idx+4, idx+5)
+		args = append(args, a.Battletag, a.Character, communityId, a.Plot, a.Score)
 	}
 
 	sqlStr = strings.TrimSuffix(sqlStr, ",")
@@ -148,8 +180,8 @@ func (s *StorageClient) PersistAndLock(ctx context.Context, assignments []model.
 
 func (s *StorageClient) GetAssignments(ctx context.Context, communityId string) ([]model.Assignment, error) {
 	rows, err := s.db.Query(ctx, `
-		SELECT battletag, plot_id, plot_score
-		FROM assignments
+		SELECT battletag, char, plot_id, plot_score
+		FROM assignments as a
 		WHERE community_id = $1
 	`, communityId)
 	if err != nil {
@@ -162,7 +194,7 @@ func (s *StorageClient) GetAssignments(ctx context.Context, communityId string) 
 
 	for rows.Next() {
 		var a model.Assignment
-		if err := rows.Scan(&a.Battletag, &a.Plot, &a.Score); err != nil {
+		if err := rows.Scan(&a.Battletag, &a.Character, &a.Plot, &a.Score); err != nil {
 			return nil, err
 		}
 		assignments = append(assignments, a)

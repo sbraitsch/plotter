@@ -49,6 +49,7 @@ func (s *userServiceImpl) Validate(ctx context.Context) (*model.ValidatedUser, e
 	user := ctx.Value(middleware.CtxUser).(*model.User)
 	return &model.ValidatedUser{
 		Battletag: user.Battletag,
+		Char:      user.Char,
 		IsAdmin:   user.CommunityRank <= user.Community.OfficerRank,
 		Community: model.ValidatedCommunity{
 			Id:     user.Community.Id,

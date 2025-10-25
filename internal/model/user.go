@@ -4,6 +4,7 @@ import "time"
 
 type User struct {
 	Battletag     string
+	Char          string
 	Community     UserCommunity
 	CommunityRank int
 	AccessToken   string
@@ -18,6 +19,7 @@ type UserCommunity struct {
 }
 type ValidatedUser struct {
 	Battletag string             `json:"battletag"`
+	Char      string             `json:"char"`
 	IsAdmin   bool               `json:"isAdmin"`
 	Community ValidatedCommunity `json:"community"`
 }

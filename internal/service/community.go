@@ -42,9 +42,19 @@ func (s *communityServiceImpl) GetCommunityData(ctx context.Context) (*model.Com
 
 func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId string) error {
 	user := ctx.Value(middleware.CtxUser).(*model.User)
-	community, err := s.storage.GetCommunity(ctx, communityId)
+	occupancy, err := s.storage.GetCommunitySize(ctx, communityId)
+	if err != nil {
+		log.Printf("Error retrieving community occupancy from database: %v", err)
+		return err
+	}
+	if occupancy > 53 {
+		return fmt.Errorf("Community is full. Apologies.")
+	}
+
+	community, requiredRank, err := s.storage.GetCommunity(ctx, communityId)
 	if err != nil {
 		log.Printf("Error retrieving community to join from database: %v", err)
+		return err
 	}
 
 	client := oauth.GetClient(ctx)
@@ -57,7 +67,7 @@ func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId st
 	}
 	roster, err := bnetService.GetGuildRoster(ctx, community)
 
-	err = s.storage.JoinCommunity(ctx, user, communityId, profile, roster)
+	err = s.storage.JoinCommunity(ctx, user, requiredRank, communityId, profile, roster)
 	return err
 }
 

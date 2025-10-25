@@ -5,6 +5,7 @@ import { Community, validateSession } from "../api/validate";
 
 export type User = {
   battletag: string;
+  char: string;
   community: Community;
   isAdmin: boolean;
 };

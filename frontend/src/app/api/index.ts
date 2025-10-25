@@ -12,7 +12,8 @@ export async function fetchWithAuth<T = void>(
   const res = await fetch(url, { ...options, headers });
 
   if (!res.ok) {
-    throw new Error("request failed");
+    const errorText = await res.text();
+    throw new Error(errorText || res.statusText);
   }
 
   if (res.status === 204 || res.headers.get("Content-Length") === "0") {

@@ -7,6 +7,7 @@ import Feature from "ol/Feature.js";
 import { BASE_STYLE, HOVER_STYLE } from "./Features";
 import Icon from "ol/style/Icon";
 import Style from "ol/style/Style";
+import { PlotEntry } from "../api/player";
 
 interface MapHoverPopupProps {
   map?: Map;
@@ -65,7 +66,10 @@ export default function MapHoverPopups({ map }: MapHoverPopupProps) {
       if (feature) {
         const pointGeometry = feature.getGeometry() as Point;
         const coords = pointGeometry.getCoordinates();
-        const pinId = feature.get("plot").id;
+        const pinId = feature.get("plot");
+        const interestedParties = feature.get("interested") as
+          | PlotEntry[]
+          | undefined;
 
         if (feature !== lastFeature) {
           if (feature) {
@@ -78,7 +82,26 @@ export default function MapHoverPopups({ map }: MapHoverPopupProps) {
         }
 
         if (overlayRef.current && coords) {
-          popupRef.current!.innerHTML = `Plot #${pinId}`;
+          let listHtml = "";
+
+          if (interestedParties && interestedParties.length > 0) {
+            listHtml = `<ul style="margin: 0.5em 0 0 1em; padding: 0; list-style: disc;">
+              ${interestedParties
+                .map((p) => `<li>${p.char}: ${p.prio}</li>`)
+                .join("")}
+            </ul>`;
+          } else {
+            listHtml = `<div style="margin-top: 0.5em; font-style: italic;">No one has picked this plot.</div>`;
+          }
+
+          popupRef.current!.innerHTML = `
+              <div>
+                <strong>Plot #${pinId}</strong>
+                <ul style="margin: 0.5em 0 0 1em; padding: 0; list-style: disc;">
+                  ${listHtml}
+                </ul>
+              </div>
+            `;
           overlayRef.current.setPosition(coords);
         }
       } else {

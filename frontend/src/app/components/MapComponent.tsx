@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 
-// OpenLayers imports: Using explicit .js file extensions for bundler compatibility
 import Feature from "ol/Feature.js";
 import Map from "ol/Map.js";
 import View from "ol/View.js";
@@ -17,7 +16,7 @@ import Static from "ol/source/ImageStatic.js";
 import { PlotData, plotData } from "../data/PlotData";
 
 import "@/styles/MapStyles.css";
-import { getCommunityData, PlayerData } from "../api/player";
+import { getCommunityData, PlayerData, buildPlotMap } from "../api/player";
 import { useAuth } from "../context/AuthContext";
 import { getLowestFreePriority } from "../utils";
 import ControlPanel from "./ControlPanel";
@@ -26,7 +25,7 @@ import {
   createAssignmentBadge,
   updateBadgeStyles,
 } from "./Features";
-import MapHoverPopup from "./Popup";
+import MapHoverPopup from "./Tooltip";
 import { Assignment, getAssignedPlots } from "../api/optimizer";
 import TargetedModal from "./TargetedModal";
 
@@ -85,7 +84,7 @@ export default function MapComponent() {
 
   useEffect(() => {
     playerRef.current = player;
-    lockedRef.current = user?.community.locked ?? false;
+    lockedRef.current = user?.community.locked || plotAssignments?.length > 0;
     rerenderFeatures();
   }, [user?.community.locked, playerData, plotAssignments]);
 
@@ -187,13 +186,16 @@ export default function MapComponent() {
       return;
     }
 
+    const plotMap = buildPlotMap(playerData);
+
     const vectorSource = new VectorSource({
       features: plotData.map((plot, index) => {
         const feature = new Feature({
           geometry: new Point([plot.xCoord, plot.yCoord]),
           name: plot.label,
           id: index,
-          plot: plot,
+          plot: plot.id,
+          interested: plotMap[plot.id],
         });
         feature.setStyle(BASE_STYLE);
         return feature;
@@ -247,12 +249,12 @@ export default function MapComponent() {
           feature.getGeometry()?.getType() === "Point" &&
           !lockedRef.current
         ) {
-          const plot = feature.get("plot") as PlotData;
+          const plot = feature.get("plot") as number;
           if (!targetedRef.current) {
-            updatePlayerPlot(plot.id, nextPrio);
+            updatePlayerPlot(plot, nextPrio);
             nextPrio++;
           } else {
-            handleOpenModal(plot.id);
+            handleOpenModal(plot);
           }
         }
       });

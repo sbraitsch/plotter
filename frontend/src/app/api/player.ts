@@ -7,12 +7,18 @@ interface CommunityData {
 export interface PlayerData {
   id: string;
   battletag: string;
+  char: string;
   plotData: Record<number, number>;
 }
 
 export interface PlayerUpdate {
   battletag: string;
   plotData: Record<number, number>;
+}
+
+export interface PlotEntry {
+  char: string;
+  prio: number;
 }
 
 export async function getCommunityData(): Promise<PlayerData[]> {
@@ -38,4 +44,25 @@ export async function updatePlayerData(
     ...p,
     plotData: p.plotData || {},
   }));
+}
+
+export function buildPlotMap(
+  players: PlayerData[],
+): Record<number, PlotEntry[]> {
+  const plotMap: Record<number, PlotEntry[]> = {};
+
+  players.forEach((player) => {
+    for (const [plotIdStr, prio] of Object.entries(player.plotData)) {
+      const plotId = Number(plotIdStr);
+      if (!plotMap[plotId]) {
+        plotMap[plotId] = [];
+      }
+      plotMap[plotId].push({
+        char: player.char,
+        prio,
+      });
+    }
+  });
+
+  return plotMap;
 }

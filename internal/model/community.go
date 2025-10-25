@@ -6,6 +6,7 @@ type CommunityData struct {
 }
 
 type MemberData struct {
+	Character string      `json:"char"`
 	BattleTag string      `json:"battletag"`
 	PlotData  map[int]int `json:"plotData"`
 }
@@ -31,7 +32,8 @@ type character struct {
 }
 
 type Assignment struct {
-	Battletag string `json:"player"`
+	Character string `json:"char"`
+	Battletag string `json:"btag"`
 	Plot      int    `json:"plot"`
 	Score     int    `json:"score"`
 }

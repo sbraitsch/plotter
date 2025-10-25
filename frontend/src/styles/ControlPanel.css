@@ -17,14 +17,16 @@
     display: flex;
     gap: 0.5em;
     flex-wrap: wrap;
+    justify-content: flex-end;
 }
 
-.btn-group .btn {
-    flex: 1;
+.toggle-group {
+    display: flex;
+    gap: 0.5em;
+    flex-wrap: wrap;
 }
 
 .admin-btn {
-    flex: 1;
     border: none;
     border-radius: 0.5rem;
     cursor: pointer;
@@ -33,19 +35,26 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background-color: var(--admin-to);
-    padding: 0.5em 0.5em;
+    background-color: transparent;
+    padding: 0.5em 0.3em;
     font-size: 0.8em;
     box-sizing: border-box;
 }
 
 .admin-btn:hover {
+    background: var(--sync);
     box-shadow: 0 0 6px var(--sync);
+    color: var(--background);
 }
 
 .active-btn {
     background: var(--active-btn);
     color: var(--background);
+}
+
+.locked-btn {
+    background-color: var(--admin-to) !important;
+    color: gray;
 }
 
 .btag-tile {
@@ -59,10 +68,11 @@
 }
 
 .btag-label {
-    font-size: 1em;
-    text-transform: uppercase;
-    color: var(--bnet-blue);
+    font-size: 0.5em;
+    font-weight: 600;
+    color: white;
     letter-spacing: 1px;
+    color: var(--sync-light);
 }
 
 .btag-value {
@@ -74,7 +84,7 @@
 }
 
 .btag-community {
-    font-size: 0.6rem;
+    font-size: 0.5em;
     text-transform: uppercase;
     color: var(--highlight-light);
     letter-spacing: 1px;
@@ -124,6 +134,7 @@
 .lock-notice {
     color: gray;
     font-size: 0.8rem;
+    height: 30%;
 }
 
 @keyframes fadeInOut {
@@ -143,4 +154,93 @@
         opacity: 0;
         transform: translateY(-10px);
     }
+}
+
+.toggle-wrapper {
+    width: 100%;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    background-color: transparent;
+    padding: 0.5em 0.3em;
+    font-size: 0.8em;
+    box-sizing: border-box;
+}
+
+.toggle-wrapper:hover:not(:disabled) {
+    box-shadow: 0 0 6px var(--sync);
+}
+
+.toggle {
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease-in-out;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.8em;
+    box-sizing: border-box;
+}
+
+.toggle-switch {
+    display: inline-block;
+    background: #ccc;
+    border-radius: 16px;
+    width: 4em;
+    height: 2em;
+    position: relative;
+    vertical-align: middle;
+    transition: background 0.25s;
+}
+
+/* thumb (icon container) */
+.toggle-thumb {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background-color: #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition:
+        left 0.25s,
+        background 0.25s,
+        box-shadow 0.25s;
+}
+
+.toggle:hover .toggle-thumb {
+    box-shadow: 0 0 6px var(--background);
+}
+
+.toggle-checkbox:checked + .toggle-switch {
+    background: var(--background);
+    box-shadow: 0 0 6px var(--sync);
+}
+
+.toggle-checkbox:not(:checked) + .toggle-switch .toggle-thumb {
+    background-color: var(--background);
+    color: white;
+}
+
+.toggle-checkbox:checked + .toggle-switch .toggle-thumb {
+    left: calc(100% - 28px);
+}
+
+.toggle-checkbox {
+    position: absolute;
+    visibility: hidden;
+}
+.toggle-label {
+    margin-left: 5px;
+    position: relative;
+    font-size: 1em;
+    user-select: none;
 }

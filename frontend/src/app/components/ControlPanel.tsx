@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "@/styles/ControlPanel.css";
 import { PlayerData, PlayerUpdate, updatePlayerData } from "../api/player";
 import {
@@ -6,11 +6,12 @@ import {
   Lock,
   Unlock,
   Cog,
+  Info,
   TestTubeDiagonal,
   TestTube,
   Trash2,
-  Hand,
-  Target,
+  PowerOff,
+  Power,
 } from "lucide-react";
 import PlotGrid from "./PlotGrid";
 import { useAuth, User } from "../context/AuthContext";
@@ -23,6 +24,8 @@ import {
   getOptimizedAssignments,
   optimizeAndLock,
 } from "../api/optimizer";
+import { getAppPageStaticInfo } from "next/dist/build/analysis/get-page-static-info";
+import InfoModal from "./InfoModal";
 
 interface ControlPanelProps {
   user: User | undefined;
@@ -49,6 +52,7 @@ export default function ControlPanel({
   const [showNotification, setShowNotification] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [isClearModalOpen, setIsClearModalOpen] = useState(false);
+  const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [notificationContent, setNotificationContent] = useState("");
   const [isPreviewing, setIsPreviewing] = useState(user?.community.locked);
 
@@ -81,22 +85,26 @@ export default function ControlPanel({
     setTargetedMode((prev) => !prev);
   };
 
-  const runOptimizer = async () => {
-    if (isPreviewing && !user?.community.locked) {
+  const togglePreview = () => {
+    setIsPreviewing((prev) => !prev);
+  };
+
+  useEffect(() => {
+    if (!isPreviewing && !user?.community.locked) {
       updatePlotAssignments([]);
       setIsPreviewing(false);
       setNotificationContent("Preview stopped.");
-    } else if (!isPreviewing) {
-      const results = await getOptimizedAssignments();
-      updatePlotAssignments(results);
-      setIsPreviewing(true);
-      setNotificationContent("Previewing optimized assignments.");
-    } else {
-      setNotificationContent("Community is locked. Can't leave Preview Mode.");
+    } else if (isPreviewing) {
+      async function getAssigments() {
+        const results = await getOptimizedAssignments();
+        updatePlotAssignments(results);
+        setNotificationContent("Previewing optimized assignments.");
+      }
+      getAssigments();
     }
     setShowNotification(true);
     setTimeout(() => setShowNotification(false), 5000);
-  };
+  }, [isPreviewing]);
 
   const lockCommunity = async () => {
     const results = await optimizeAndLock();
@@ -146,8 +154,38 @@ export default function ControlPanel({
     <>
       <div className="info-panel">
         <div className="btag-tile">
-          <div className="btag-value">{user?.battletag}</div>
+          <div className="btag-label">{user?.battletag}</div>
+          <div className="btag-value">{user?.char}</div>
           <div className="btag-community">&lt;{user?.community.name}&gt;</div>
+        </div>
+        <div className="btn-group">
+          {isPreviewing && (
+            <button className="admin-btn" onClick={lockCommunity}>
+              {user?.community.locked ? <Unlock /> : <Lock />}
+            </button>
+          )}
+          {!user?.community.locked && (
+            <button
+              className="admin-btn"
+              onClick={() => setIsClearModalOpen(true)}
+            >
+              <Trash2 />
+            </button>
+          )}
+          <button
+            className="admin-btn"
+            onClick={() => setIsInfoModalOpen(true)}
+          >
+            <Info />
+          </button>
+          {showAdminPanel && (
+            <button
+              className="admin-btn"
+              onClick={() => setIsAdminModalOpen(true)}
+            >
+              <Cog />
+            </button>
+          )}
         </div>
         {user?.community.locked ? (
           <div className="lock-notice">
@@ -155,70 +193,93 @@ export default function ControlPanel({
             disabled.
           </div>
         ) : (
-          <>
-            <PlotGrid player={playerData} updatePlayerPlot={updatePlayerPlot} />
-            <div className="btn-group">
-              <button
-                className="admin-btn"
-                onClick={() => setIsClearModalOpen(true)}
-              >
-                <Trash2 />
-                Clear
-              </button>
-              <button
-                className={`admin-btn ${targetedMode ? "active-btn" : ""}`}
-                onClick={toggleManualAssign}
-              >
-                <Target />
-                Targeted
-              </button>
-            </div>
-            <div className="lock-notice">
-              Click a house on the map to assign the lowest free priority to it.
-              <br />
-              <br />
-              Click it again to remove it.
-              <br />
-              <br />
-              When using Targeted mode, clicking on a house opens a modal that
-              lets you prioritize manually.
-            </div>
-          </>
-        )}
-        <div className="spacer"></div>
-        {showAdminPanel && (
-          <div className="btn-group">
-            {(isPreviewing || user.community.locked) && (
-              <button
-                className={`admin-btn
-                 ${user.community.locked ? "active-btn" : ""}`}
-                onClick={lockCommunity}
-              >
-                {user.community.locked ? (
-                  <Unlock size={16} />
-                ) : (
-                  <Lock size={16} />
-                )}
-                {user.community.locked ? "Unlock Community" : "Lock Community"}
-              </button>
-            )}
-            <button
-              className="admin-btn"
-              onClick={() => setIsAdminModalOpen(true)}
-            >
-              <Cog color="grey" />
-              Configure
-            </button>
-            <button
-              className={`admin-btn ${isPreviewing ? "active-btn" : ""}`}
-              onClick={runOptimizer}
-            >
-              {isPreviewing ? <TestTubeDiagonal /> : <TestTube />}
-              Preview
-            </button>
-          </div>
+          <PlotGrid player={playerData} updatePlayerPlot={updatePlayerPlot} />
         )}
 
+        <div className="toggle-group">
+          {!user?.community.locked && (
+            <>
+              <button
+                className={`toggle-wrapper ${!isPreviewing ? (targetedMode ? "active-btn" : "") : "locked-btn"}`}
+                onClick={toggleManualAssign}
+                disabled={isPreviewing}
+              >
+                <span className="toggle-label">Target Mode:</span>
+                <label className="toggle">
+                  <input
+                    className="toggle-checkbox"
+                    type="checkbox"
+                    checked={targetedMode}
+                    onChange={toggleManualAssign}
+                    disabled={isPreviewing}
+                  />
+                  <div className="toggle-switch">
+                    <div className="toggle-thumb">
+                      {targetedMode ? (
+                        <Power size={16} />
+                      ) : (
+                        <PowerOff size={16} />
+                      )}
+                    </div>
+                  </div>
+                </label>
+              </button>
+              <button
+                className={`toggle-wrapper ${isPreviewing ? "active-btn" : ""}`}
+                onClick={togglePreview}
+                disabled={user?.community.locked}
+              >
+                <span className="toggle-label">Preview:</span>
+                <label className="toggle">
+                  <input
+                    className="toggle-checkbox"
+                    type="checkbox"
+                    checked={isPreviewing}
+                    onChange={togglePreview}
+                    disabled={user?.community.locked}
+                  />
+                  <div className="toggle-switch">
+                    <div className="toggle-thumb">
+                      {isPreviewing ? (
+                        <TestTubeDiagonal size={16} />
+                      ) : (
+                        <TestTube size={16} />
+                      )}
+                    </div>
+                  </div>
+                </label>
+              </button>
+            </>
+          )}
+
+          {/*{(isPreviewing || user?.community.locked) && (
+            <button
+              className={`toggle-wrapper
+                               ${user?.community.locked ? "active-btn" : ""}`}
+              onClick={lockCommunity}
+            >
+              <span className="toggle-label">Lock Community:</span>
+              <label className="toggle">
+                <input
+                  className="toggle-checkbox"
+                  type="checkbox"
+                  checked={user?.community.locked}
+                  onChange={lockCommunity}
+                />
+                <div className="toggle-switch">
+                  <div className="toggle-thumb">
+                    {user?.community.locked ? (
+                      <Unlock size={16} />
+                    ) : (
+                      <Lock size={16} />
+                    )}
+                  </div>
+                </div>
+              </label>
+            </button>
+          )}*/}
+        </div>
+        <div className="spacer"></div>
         <button className="btn" disabled={!contextDirty} onClick={handleSync}>
           <CloudUpload />
           Sync
@@ -250,6 +311,10 @@ export default function ControlPanel({
         isOpen={isClearModalOpen}
         onClose={() => setIsClearModalOpen(false)}
         onSubmit={handleClearModalSubmit}
+      />
+      <InfoModal
+        isOpen={isInfoModalOpen}
+        onClose={() => setIsInfoModalOpen(false)}
       />
     </>
   );

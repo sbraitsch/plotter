@@ -20,12 +20,15 @@ export default function ClearModal({
         <h2 className="modal-title">Note</h2>
 
         <div className="text-content">
+          This will reset all your priorizations locally, but not on the server.
+          <br />
+          <br />
           Changes will only be persisted if you{" "}
           <div className="inline-btn">Sync</div> them after.
         </div>
 
         <button className="btn submit-btn" onClick={onSubmit}>
-          Reset
+          Clear
         </button>
       </div>
     </div>

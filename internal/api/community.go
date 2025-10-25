@@ -59,7 +59,7 @@ func (api *communityAPIImpl) joinCommunity(w http.ResponseWriter, r *http.Reques
 	communityId := chi.URLParam(r, "id")
 	err := api.service.JoinCommunity(r.Context(), communityId)
 	if err != nil {
-		http.Error(w, "Failed to join community", http.StatusInternalServerError)
+		http.Error(w, "Failed to join community: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 

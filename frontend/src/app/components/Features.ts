@@ -118,11 +118,8 @@ export function createAssignmentStyle(
   }
 
   const badgeStyle = new Style({
-    // Optional: keep a small marker if you want, or remove entirely
-    // image: new OlCircle({ radius: 4, fill: new OlFill({ color: "#fff" }) }),
-
     text: new OlText({
-      text: ass.player.toString(), // longer text allowed
+      text: ass.char.toString(), // longer text allowed
       font: "bold 14px Geist, sans-serif",
       fill: new OlFill({ color: "black" }),
       stroke: new Stroke({ color: getGradientColor(ass.score), width: 2 }), // optional outline for readability

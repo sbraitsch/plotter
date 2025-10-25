@@ -64,8 +64,12 @@ const CommunitySelection: React.FC = () => {
           },
         };
       });
-    } catch (err) {
-      setError("Failed to join community");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("An error occurred.");
+      }
     }
   };
 
