@@ -39,7 +39,8 @@ func (api *communityAPIImpl) Routes(tmw, amw func(http.Handler) http.Handler) ch
 		admin.Get("/optimize", api.runOptimizer)
 		admin.Get("/assignments", api.getAssignments)
 		admin.Post("/lock", api.toggleCommunityLock)
-		admin.Post("/config", api.setOfficerRank)
+		admin.Post("/config", api.setCommunitySettings)
+		admin.Get("/config", api.getCommunitySettings)
 	})
 
 	return r
@@ -57,13 +58,13 @@ func (api *communityAPIImpl) getCommunityData(w http.ResponseWriter, r *http.Req
 
 func (api *communityAPIImpl) joinCommunity(w http.ResponseWriter, r *http.Request) {
 	communityId := chi.URLParam(r, "id")
-	err := api.service.JoinCommunity(r.Context(), communityId)
+	joinedChar, err := api.service.JoinCommunity(r.Context(), communityId)
 	if err != nil {
 		http.Error(w, "Failed to join community: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	render.JSON(w, r, joinedChar)
 }
 
 func (api *communityAPIImpl) runOptimizer(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +107,7 @@ func (api *communityAPIImpl) getAssignments(w http.ResponseWriter, r *http.Reque
 	render.JSON(w, r, assignments)
 }
 
-func (api *communityAPIImpl) setOfficerRank(w http.ResponseWriter, r *http.Request) {
+func (api *communityAPIImpl) setCommunitySettings(w http.ResponseWriter, r *http.Request) {
 	user := r.Context().Value(middleware.CtxUser).(*model.User)
 	req := &model.CommunityRankRequest{}
 
@@ -115,12 +116,12 @@ func (api *communityAPIImpl) setOfficerRank(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if req.MinRank < 0 {
+	if req.AdminRank < 0 || req.MemberRank < 0 {
 		http.Error(w, "Nice try.", http.StatusBadRequest)
 		return
 	}
 
-	err := api.service.SetOfficerRank(r.Context(), user.Community.Id, req.MinRank)
+	err := api.service.SetCommunitySettings(r.Context(), user.Community.Id, req)
 
 	if err != nil {
 		log.Printf("Failed to update community settings: %v", err)
@@ -129,4 +130,18 @@ func (api *communityAPIImpl) setOfficerRank(w http.ResponseWriter, r *http.Reque
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func (api *communityAPIImpl) getCommunitySettings(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(middleware.CtxUser).(*model.User)
+
+	settings, err := api.service.GetCommunitySettings(r.Context(), user.Community.Id)
+
+	if err != nil {
+		log.Printf("Failed to get community settings: %v", err)
+		http.Error(w, "Error getting community settings", http.StatusInternalServerError)
+		return
+	}
+
+	render.JSON(w, r, settings)
 }

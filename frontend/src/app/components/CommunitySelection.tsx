@@ -47,15 +47,20 @@ const CommunitySelection: React.FC = () => {
   };
 
   const handleSubmit = async (com: CommunityResponse) => {
+    localStorage.setItem("showInfoModal", "yurr");
     try {
-      await fetchWithAuth<Community>(`${BASE_URL}/community/join/${com.id}`, {
-        method: "POST",
-      });
+      const char = await fetchWithAuth<string>(
+        `${BASE_URL}/community/join/${com.id}`,
+        {
+          method: "POST",
+        },
+      );
 
       setUser((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
+          char: char,
           community: {
             id: com.id,
             name: com.name,

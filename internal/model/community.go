@@ -37,3 +37,8 @@ type Assignment struct {
 	Plot      int    `json:"plot"`
 	Score     int    `json:"score"`
 }
+
+type Settings struct {
+	OfficerRank int `json:"officerRank"`
+	MemberRank  int `json:"memberRank"`
+}

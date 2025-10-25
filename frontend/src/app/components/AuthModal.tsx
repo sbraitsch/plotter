@@ -18,12 +18,12 @@ const AuthModal: React.FC = () => {
       <button onClick={handleLogin} className="bnet-login-btn">
         <img src="/bnet.svg" alt="Battle.net" className="bnet-icon" />
         Log in with Battle.net
+        {loading && (
+          <div className="spinner-overlay">
+            <div className="spinner" />
+          </div>
+        )}
       </button>
-      {loading && (
-        <div className="spinner-container">
-          <div className="spinner" />
-        </div>
-      )}
     </div>
   );
 };

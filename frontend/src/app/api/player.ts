@@ -21,6 +21,11 @@ export interface PlotEntry {
   prio: number;
 }
 
+export interface CommunitySettings {
+  officerRank: number;
+  memberRank: number;
+}
+
 export async function getCommunityData(): Promise<PlayerData[]> {
   const url = `${BASE_URL}/community`;
   const data = await fetchWithAuth<CommunityData>(url);
@@ -28,6 +33,12 @@ export async function getCommunityData(): Promise<PlayerData[]> {
     ...p,
     plotData: p.plotData || {},
   }));
+}
+
+export async function getCommunitySettings(): Promise<CommunitySettings> {
+  const url = `${BASE_URL}/community/config`;
+  const data = await fetchWithAuth<CommunitySettings>(url);
+  return data;
 }
 
 export async function updatePlayerData(

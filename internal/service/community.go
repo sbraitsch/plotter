@@ -13,10 +13,11 @@ import (
 
 type CommunityService interface {
 	GetCommunityData(ctx context.Context) (*model.CommunityData, error)
-	JoinCommunity(ctx context.Context, communityId string) error
+	JoinCommunity(ctx context.Context, communityId string) (string, error)
 	ToggleCommunityLock(ctx context.Context, user *model.User) ([]model.Assignment, error)
 	GetAssignments(ctx context.Context, communityId string) ([]model.Assignment, error)
-	SetOfficerRank(ctx context.Context, communityId string, officerRank int) error
+	SetCommunitySettings(ctx context.Context, communityId string, req *model.CommunityRankRequest) error
+	GetCommunitySettings(ctx context.Context, communityId string) (*model.Settings, error)
 }
 
 type communityServiceImpl struct {
@@ -40,21 +41,21 @@ func (s *communityServiceImpl) GetCommunityData(ctx context.Context) (*model.Com
 	return community, nil
 }
 
-func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId string) error {
+func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId string) (string, error) {
 	user := ctx.Value(middleware.CtxUser).(*model.User)
 	occupancy, err := s.storage.GetCommunitySize(ctx, communityId)
 	if err != nil {
 		log.Printf("Error retrieving community occupancy from database: %v", err)
-		return err
+		return "", err
 	}
 	if occupancy > 53 {
-		return fmt.Errorf("Community is full. Apologies.")
+		return "", fmt.Errorf("Community is full. Apologies.")
 	}
 
 	community, requiredRank, err := s.storage.GetCommunity(ctx, communityId)
 	if err != nil {
 		log.Printf("Error retrieving community to join from database: %v", err)
-		return err
+		return "", err
 	}
 
 	client := oauth.GetClient(ctx)
@@ -63,12 +64,12 @@ func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId st
 	profile, err := bnetService.GetProfile(ctx)
 	if err != nil {
 		log.Printf("Failed to retrieve wow profile: %v", err)
-		return err
+		return "", err
 	}
 	roster, err := bnetService.GetGuildRoster(ctx, community)
 
-	err = s.storage.JoinCommunity(ctx, user, requiredRank, communityId, profile, roster)
-	return err
+	joinedChar, err := s.storage.JoinCommunity(ctx, user, requiredRank, communityId, profile, roster)
+	return joinedChar, err
 }
 
 func (s *communityServiceImpl) ToggleCommunityLock(ctx context.Context, user *model.User) ([]model.Assignment, error) {
@@ -103,6 +104,10 @@ func (s *communityServiceImpl) GetAssignments(ctx context.Context, communityId s
 	return s.storage.GetAssignments(ctx, communityId)
 }
 
-func (s *communityServiceImpl) SetOfficerRank(ctx context.Context, communityId string, officerRank int) error {
-	return s.storage.SetOfficerRank(ctx, communityId, officerRank)
+func (s *communityServiceImpl) SetCommunitySettings(ctx context.Context, communityId string, req *model.CommunityRankRequest) error {
+	return s.storage.SetOfficerRank(ctx, communityId, req)
+}
+
+func (s *communityServiceImpl) GetCommunitySettings(ctx context.Context, communityId string) (*model.Settings, error) {
+	return s.storage.GetCommunitySettings(ctx, communityId)
 }

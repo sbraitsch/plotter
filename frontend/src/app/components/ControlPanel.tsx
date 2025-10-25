@@ -56,11 +56,11 @@ export default function ControlPanel({
   const [notificationContent, setNotificationContent] = useState("");
   const [isPreviewing, setIsPreviewing] = useState(user?.community.locked);
 
-  const handleAdminModalSubmit = async (minRank: number) => {
+  const handleAdminModalSubmit = async (admin: number, member: number) => {
     try {
       await fetchWithAuth(`${BASE_URL}/community/config`, {
         method: "POST",
-        body: JSON.stringify({ minRank: minRank }),
+        body: JSON.stringify({ adminRank: admin, memberRank: member }),
       });
       setNotificationContent("Community guidelines updated.");
     } catch (err) {
@@ -90,20 +90,25 @@ export default function ControlPanel({
   };
 
   useEffect(() => {
+    if (localStorage.getItem("showInfoModal")) {
+      setIsInfoModalOpen(true);
+    }
+  });
+
+  useEffect(() => {
     if (!isPreviewing && !user?.community.locked) {
       updatePlotAssignments([]);
       setIsPreviewing(false);
-      setNotificationContent("Preview stopped.");
     } else if (isPreviewing) {
       async function getAssigments() {
         const results = await getOptimizedAssignments();
         updatePlotAssignments(results);
         setNotificationContent("Previewing optimized assignments.");
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 5000);
       }
       getAssigments();
     }
-    setShowNotification(true);
-    setTimeout(() => setShowNotification(false), 5000);
   }, [isPreviewing]);
 
   const lockCommunity = async () => {
@@ -251,33 +256,6 @@ export default function ControlPanel({
               </button>
             </>
           )}
-
-          {/*{(isPreviewing || user?.community.locked) && (
-            <button
-              className={`toggle-wrapper
-                               ${user?.community.locked ? "active-btn" : ""}`}
-              onClick={lockCommunity}
-            >
-              <span className="toggle-label">Lock Community:</span>
-              <label className="toggle">
-                <input
-                  className="toggle-checkbox"
-                  type="checkbox"
-                  checked={user?.community.locked}
-                  onChange={lockCommunity}
-                />
-                <div className="toggle-switch">
-                  <div className="toggle-thumb">
-                    {user?.community.locked ? (
-                      <Unlock size={16} />
-                    ) : (
-                      <Lock size={16} />
-                    )}
-                  </div>
-                </div>
-              </label>
-            </button>
-          )}*/}
         </div>
         <div className="spacer"></div>
         <button className="btn" disabled={!contextDirty} onClick={handleSync}>

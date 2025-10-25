@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"math"
@@ -92,7 +93,7 @@ func (s *StorageClient) JoinCommunity(
 	communityId string,
 	profile *model.WowProfile,
 	roster *model.Roster,
-) error {
+) (string, error) {
 	minRank := math.MaxInt
 	var charName string
 	for _, acc := range profile.WowAccounts {
@@ -110,7 +111,7 @@ func (s *StorageClient) JoinCommunity(
 
 	if requiredRank < minRank {
 		log.Printf("Failed to join community. Rank requirement not fulfilled.")
-		return fmt.Errorf("Rank requirement not fulfilled.")
+		return "", fmt.Errorf("Rank requirement not fulfilled.")
 	}
 
 	_, err := s.db.Exec(ctx,
@@ -122,10 +123,10 @@ func (s *StorageClient) JoinCommunity(
 
 	if err != nil {
 		log.Printf("Failed to update community values for user %v:%v", user, err)
-		return fmt.Errorf("Information could not be persisted.")
+		return "", fmt.Errorf("Information could not be persisted.")
 	}
 
-	return nil
+	return charName, nil
 }
 
 func (s *StorageClient) UnlockCommunity(ctx context.Context, communityId string) error {
@@ -260,16 +261,33 @@ func (s *StorageClient) InsertGuilds(ctx context.Context, guilds []model.Communi
 	return saved, nil
 }
 
-func (s *StorageClient) SetOfficerRank(ctx context.Context, communityId string, officerRank int) error {
+func (s *StorageClient) SetOfficerRank(ctx context.Context, communityId string, req *model.CommunityRankRequest) error {
 	_, err := s.db.Exec(ctx, `
 			UPDATE communities
-			SET officer_rank = $1
-			WHERE id = $2::uuid
-		`, officerRank, communityId)
+			SET officer_rank = $1, member_rank = $2
+			WHERE id = $3::uuid
+		`, req.AdminRank, req.MemberRank, communityId)
 	if err != nil {
-		log.Printf("Failed to update community %s's officer_rank: %v", communityId, err)
+		log.Printf("Failed to update community %s's rank settings: %v", communityId, err)
 		return err
 	}
 
 	return nil
+}
+
+func (s *StorageClient) GetCommunitySettings(ctx context.Context, communityId string) (*model.Settings, error) {
+	var officerRank, memberRank sql.NullInt32
+	err := s.db.QueryRow(ctx,
+		`SELECT officer_rank, member_rank
+			     FROM communities
+				 WHERE id = $1`,
+		communityId,
+	).Scan(&officerRank, &memberRank)
+
+	if err != nil {
+		log.Printf("Failed to retrieve settings for community %s: %v", communityId, err)
+		return nil, err
+	}
+
+	return &model.Settings{OfficerRank: int(officerRank.Int32), MemberRank: int(memberRank.Int32)}, nil
 }

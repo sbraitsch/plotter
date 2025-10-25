@@ -5,5 +5,6 @@ type PlotMappingRequest struct {
 }
 
 type CommunityRankRequest struct {
-	MinRank int `json:"minRank"`
+	AdminRank  int `json:"adminRank"`
+	MemberRank int `json:"memberRank"`
 }

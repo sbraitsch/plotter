@@ -1,46 +1,78 @@
-import { useState, ChangeEvent } from "react";
+import { useState, ChangeEvent, useEffect } from "react";
 import "@/styles/AdminModal.css";
+import { getCommunitySettings } from "../api/player";
 
 interface AdminModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (value: number) => void;
-  initialValue?: number;
+  onSubmit: (admin: number, member: number) => void;
 }
 
 export default function AdminModal({
   isOpen,
   onClose,
   onSubmit,
-  initialValue = 0,
 }: AdminModalProps) {
-  const [value, setValue] = useState<string>(initialValue?.toString() || "");
+  const [adminValue, setAdminValue] = useState("");
+  const [memberValue, setMemberValue] = useState("");
+
+  useEffect(() => {
+    if (!isOpen) return;
+    async function fetchData() {
+      try {
+        const { officerRank, memberRank } = await getCommunitySettings();
+        setAdminValue(officerRank.toString());
+        setMemberValue(memberRank.toString());
+      } catch (err: any) {
+        console.error(err);
+      }
+    }
+    fetchData();
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
-    setValue(e.target.value);
+  const handleAdminChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setAdminValue(e.target.value);
+  };
+
+  const handleMemberChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setMemberValue(e.target.value);
   };
 
   const handleSubmit = () => {
-    const num = Number(value);
-    if (!isNaN(num)) {
-      onSubmit(num);
+    const admin = Number(adminValue);
+    const member = Number(memberValue);
+    if (!isNaN(admin) && !isNaN(member)) {
+      onSubmit(admin, member);
     }
   };
 
   return (
     <div className="modal-overlay" onClick={onClose}>
       <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-        <h2 className="modal-title">Configure</h2>
+        <h2 className="modal-title">Community Guidelines</h2>
 
+        <div className="info-content">
+          Set the guild rank requirements to...
+        </div>
         <div className="modal-field">
-          <label htmlFor="minRank">Min. Rank for Admin:</label>
+          <label htmlFor="admin">...be admin: </label>
           <input
-            id="minRank"
+            id="admin"
             type="number"
-            value={value}
-            onChange={handleChange}
+            value={adminValue}
+            onChange={handleAdminChange}
+            min={0}
+          />
+        </div>
+        <div className="modal-field">
+          <label htmlFor="join">...join the community: </label>
+          <input
+            id="join"
+            type="number"
+            value={memberValue}
+            onChange={handleMemberChange}
             min={0}
           />
         </div>
