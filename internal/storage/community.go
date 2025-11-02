@@ -60,6 +60,82 @@ func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) 
 	return community, nil
 }
 
+func (s *StorageClient) GetFullCommunityData(ctx context.Context, user *model.User) (*model.FullCommunityData, error) {
+	rows, err := s.db.Query(ctx, `
+		SELECT
+			u.battletag,
+			u.char,
+			COALESCE(u.note, '') AS note,
+			a.plot_id,
+			a.plot_score,
+			pm.plot_id AS mapping_plot_id,
+			pm.priority
+		FROM users u
+		LEFT JOIN assignments a ON a.battletag = u.battletag
+		LEFT JOIN plot_mappings pm ON pm.battletag = u.battletag
+		WHERE u.community_id = $1
+		ORDER BY u.battletag, pm.plot_id
+	`, user.Community.Id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	memberMap := make(map[string]*model.FullMemberData)
+
+	for rows.Next() {
+		var (
+			btag, char, note          string
+			assignPlotID, assignScore sql.NullInt32
+			mappingPlotID, priority   sql.NullInt32
+		)
+
+		if err := rows.Scan(&btag, &char, &note, &assignPlotID, &assignScore, &mappingPlotID, &priority); err != nil {
+			return nil, err
+		}
+
+		member, exists := memberMap[btag]
+		if !exists {
+			member = &model.FullMemberData{
+				Assignment: model.Assignment{
+					Battletag: btag,
+					Character: char,
+				},
+				Note:     note,
+				PlotData: make(map[int]int),
+			}
+
+			// Fill assignment if available
+			if assignPlotID.Valid {
+				member.Assignment.Plot = int(assignPlotID.Int32)
+			}
+			if assignScore.Valid {
+				member.Assignment.Score = int(assignScore.Int32)
+			}
+
+			memberMap[btag] = member
+		}
+
+		if mappingPlotID.Valid && priority.Valid {
+			member.PlotData[int(mappingPlotID.Int32)] = int(priority.Int32)
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	members := make([]model.FullMemberData, 0, len(memberMap))
+	for _, m := range memberMap {
+		members = append(members, *m)
+	}
+
+	return &model.FullCommunityData{
+		Id:      user.Community.Id,
+		Members: members,
+	}, nil
+}
+
 func (s *StorageClient) GetCommunity(ctx context.Context, communityId string) (*model.Community, int, error) {
 	var community model.Community
 	requiredRank := 0
@@ -145,6 +221,14 @@ func (s *StorageClient) PersistAndLock(ctx context.Context, assignments []model.
 		return fmt.Errorf("failed to begin lock transaction: %w", err)
 	}
 	defer tx.Rollback(ctx)
+
+	_, err = s.db.Exec(ctx,
+		`DELETE FROM assignments WHERE community_id=$1`,
+		communityId,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to clean up assignments before update: %w", err)
+	}
 
 	sqlStr := `INSERT INTO assignments (battletag, char, community_id, plot_id, plot_score) VALUES `
 	args := []any{}

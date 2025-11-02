@@ -3,6 +3,7 @@ import { BASE_URL, fetchWithAuth } from "./index";
 export interface ValidateResponse {
   battletag: string;
   char: string;
+  note: string;
   isAdmin: boolean;
   community: Community;
 }

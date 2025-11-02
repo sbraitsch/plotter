@@ -12,6 +12,9 @@ import {
   Trash2,
   PowerOff,
   Power,
+  Download,
+  Upload,
+  NotebookPen,
 } from "lucide-react";
 import PlotGrid from "./PlotGrid";
 import { useAuth, User } from "../context/AuthContext";
@@ -21,10 +24,11 @@ import { BASE_URL, fetchWithAuth } from "../api";
 import ReactDOM from "react-dom";
 import {
   Assignment,
+  downloadAssignmentData,
   getOptimizedAssignments,
   optimizeAndLock,
+  overwriteAssignments,
 } from "../api/optimizer";
-import { getAppPageStaticInfo } from "next/dist/build/analysis/get-page-static-info";
 import InfoModal from "./InfoModal";
 
 interface ControlPanelProps {
@@ -55,6 +59,8 @@ export default function ControlPanel({
   const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
   const [notificationContent, setNotificationContent] = useState("");
   const [isPreviewing, setIsPreviewing] = useState(user?.community.locked);
+  const [note, setNote] = useState(user?.note || "");
+  const [noteEdited, setNoteEdited] = useState(false);
 
   const handleAdminModalSubmit = async (admin: number, member: number) => {
     try {
@@ -89,6 +95,11 @@ export default function ControlPanel({
     setIsPreviewing((prev) => !prev);
   };
 
+  const handleNoteChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setNote(e.target.value);
+    setNoteEdited(true);
+  };
+
   useEffect(() => {
     if (localStorage.getItem("showInfoModal")) {
       setIsInfoModalOpen(true);
@@ -110,6 +121,37 @@ export default function ControlPanel({
       getAssigments();
     }
   }, [isPreviewing]);
+
+  const triggerDownload = async () => {
+    downloadAssignmentData();
+  };
+
+  const triggerUpload = async () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = "application/json";
+    input.click();
+
+    input.onchange = async () => {
+      const file = input.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const jsonData = JSON.parse(text);
+
+        const data = await overwriteAssignments(jsonData);
+        updatePlotAssignments(data);
+        setNotificationContent("Upload successful.");
+      } catch (err) {
+        console.log(err);
+        setNotificationContent("Upload failed.");
+      } finally {
+        setShowNotification(true);
+        setTimeout(() => setShowNotification(false), 5000);
+      }
+    };
+  };
 
   const lockCommunity = async () => {
     const results = await optimizeAndLock();
@@ -141,12 +183,13 @@ export default function ControlPanel({
   const handleSync = async () => {
     if (!playerData) return;
     const update: PlayerUpdate = {
-      battletag: playerData.battletag,
+      note: note,
       plotData: playerData.plotData,
     };
     try {
       await updatePlayerData(update);
       setNotificationContent("Plot mapping updated!");
+      setNoteEdited(false);
     } catch (err) {
       setNotificationContent("Error updating plot mapping.");
     }
@@ -164,12 +207,22 @@ export default function ControlPanel({
           <div className="btag-community">&lt;{user?.community.name}&gt;</div>
         </div>
         <div className="btn-group">
+          {isPreviewing && user?.community.locked && (
+            <>
+              <button className="admin-btn" onClick={triggerDownload}>
+                <Download />
+              </button>
+              <button className="admin-btn" onClick={triggerUpload}>
+                <Upload />
+              </button>
+            </>
+          )}
           {isPreviewing && (
             <button className="admin-btn" onClick={lockCommunity}>
               {user?.community.locked ? <Unlock /> : <Lock />}
             </button>
           )}
-          {!user?.community.locked && (
+          {!user?.community.locked && !isPreviewing && (
             <button
               className="admin-btn"
               onClick={() => setIsClearModalOpen(true)}
@@ -229,36 +282,54 @@ export default function ControlPanel({
                   </div>
                 </label>
               </button>
-              <button
-                className={`toggle-wrapper ${isPreviewing ? "active-btn" : ""}`}
-                onClick={togglePreview}
-                disabled={user?.community.locked}
-              >
-                <span className="toggle-label">Preview:</span>
-                <label className="toggle">
-                  <input
-                    className="toggle-checkbox"
-                    type="checkbox"
-                    checked={isPreviewing}
-                    onChange={togglePreview}
-                    disabled={user?.community.locked}
-                  />
-                  <div className="toggle-switch">
-                    <div className="toggle-thumb">
-                      {isPreviewing ? (
-                        <TestTubeDiagonal size={16} />
-                      ) : (
-                        <TestTube size={16} />
-                      )}
+              {showAdminPanel && (
+                <button
+                  className={`toggle-wrapper ${isPreviewing ? "active-btn" : ""}`}
+                  onClick={togglePreview}
+                  disabled={user?.community.locked}
+                >
+                  <span className="toggle-label">Preview:</span>
+                  <label className="toggle">
+                    <input
+                      className="toggle-checkbox"
+                      type="checkbox"
+                      checked={isPreviewing}
+                      onChange={togglePreview}
+                      disabled={user?.community.locked}
+                    />
+                    <div className="toggle-switch">
+                      <div className="toggle-thumb">
+                        {isPreviewing ? (
+                          <TestTubeDiagonal size={16} />
+                        ) : (
+                          <TestTube size={16} />
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </label>
-              </button>
+                  </label>
+                </button>
+              )}
             </>
           )}
         </div>
-        <div className="spacer"></div>
-        <button className="btn" disabled={!contextDirty} onClick={handleSync}>
+        <div className="textarea-wrapper">
+          <textarea
+            id="info"
+            className="info-textarea"
+            placeholder="Add a note"
+            value={note}
+            onChange={handleNoteChange}
+            spellCheck={false}
+          ></textarea>
+          <label htmlFor="info" className="info-label">
+            <NotebookPen />
+          </label>
+        </div>
+        <button
+          className="btn"
+          disabled={!contextDirty && !noteEdited}
+          onClick={handleSync}
+        >
           <CloudUpload />
           Sync
         </button>

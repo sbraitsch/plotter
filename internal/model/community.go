@@ -42,3 +42,14 @@ type Settings struct {
 	OfficerRank int `json:"officerRank"`
 	MemberRank  int `json:"memberRank"`
 }
+
+type FullCommunityData struct {
+	Id      string           `json:"id"`
+	Members []FullMemberData `json:"members"`
+}
+
+type FullMemberData struct {
+	Assignment Assignment  `json:"assignment"`
+	Note       string      `json:"note"`
+	PlotData   map[int]int `json:"plotSelection"`
+}

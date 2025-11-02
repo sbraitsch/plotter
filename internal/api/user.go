@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
-	"github.com/sbraitsch/plotter/internal/middleware"
 	"github.com/sbraitsch/plotter/internal/model"
 	"github.com/sbraitsch/plotter/internal/service"
 	"github.com/sbraitsch/plotter/internal/storage"
@@ -27,16 +26,10 @@ func NewUserAPI(storage *storage.StorageClient) UserAPI {
 func (api *userAPIImpl) Routes() chi.Router {
 	r := chi.NewRouter()
 
-	// r.Get("/", api.getUserByToken)
 	r.Get("/validate", api.validate)
-	r.Post("/update", api.updateMapping)
+	r.Post("/update", api.updatePlayerData)
 
 	return r
-}
-
-func (api *userAPIImpl) getUserByToken(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(middleware.CtxUser).(*model.User)
-	render.JSON(w, r, user)
 }
 
 func (api *userAPIImpl) validate(w http.ResponseWriter, r *http.Request) {
@@ -50,11 +43,16 @@ func (api *userAPIImpl) validate(w http.ResponseWriter, r *http.Request) {
 	render.JSON(w, r, player)
 }
 
-func (api *userAPIImpl) updateMapping(w http.ResponseWriter, r *http.Request) {
-	req := &model.PlotMappingRequest{}
+func (api *userAPIImpl) updatePlayerData(w http.ResponseWriter, r *http.Request) {
+	req := &model.PlayerUpdateRequest{}
 
 	if err := render.Decode(r, req); err != nil {
 		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if err := api.service.SetNote(r.Context(), req.Note); err != nil {
+		http.Error(w, "Failed to update player note", http.StatusInternalServerError)
 		return
 	}
 

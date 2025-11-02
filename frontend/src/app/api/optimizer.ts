@@ -17,10 +17,61 @@ export async function getOptimizedAssignments(): Promise<Assignment[]> {
   }
 }
 
+export async function downloadAssignmentData(): Promise<void> {
+  try {
+    const userId = localStorage.getItem("session_token");
+    const headers: HeadersInit = {
+      "Content-Type": "application/json",
+      ...(userId ? { "X-Token": userId } : {}),
+    };
+    const url = `${BASE_URL}/community/download`;
+    await fetch(url, { headers })
+      .then(async (res) => {
+        if (!res.ok) throw new Error("Download failed");
+        return res.blob().then((blob) => ({ blob, res }));
+      })
+      .then(({ blob, res }) => {
+        const disposition = res.headers.get("Content-Disposition");
+        let filename = "community_data.json";
+        if (disposition && disposition.includes("filename=")) {
+          const match = disposition.match(/filename="(.+)"/);
+          if (match) filename = match[1];
+        }
+
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      })
+      .catch(console.error);
+  } catch (err) {
+    throw new Error("Download failed");
+  }
+}
+
+export async function overwriteAssignments(json: any): Promise<Assignment[]> {
+  try {
+    const url = `${BASE_URL}/community/upload`;
+    const data = await fetchWithAuth<Assignment[]>(url, {
+      method: "POST",
+      body: JSON.stringify(json),
+    });
+    return data;
+  } catch (err) {
+    throw new Error("Upload failed");
+  }
+}
+
 export async function optimizeAndLock(): Promise<Assignment[]> {
   try {
     const url = `${BASE_URL}/community/lock`;
-    const data = await fetchWithAuth<Assignment[]>(url, { method: "POST" });
+    const data = await fetchWithAuth<Assignment[]>(url, {
+      method: "POST",
+    });
     return data;
   } catch (err) {
     throw new Error("Optimizer failed");

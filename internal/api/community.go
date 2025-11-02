@@ -41,6 +41,8 @@ func (api *communityAPIImpl) Routes(tmw, amw func(http.Handler) http.Handler) ch
 		admin.Post("/lock", api.toggleCommunityLock)
 		admin.Post("/config", api.setCommunitySettings)
 		admin.Get("/config", api.getCommunitySettings)
+		admin.Get("/download", api.downloadCommunityData)
+		admin.Post("/upload", api.uploadCommunityData)
 	})
 
 	return r
@@ -82,7 +84,6 @@ func (api *communityAPIImpl) runOptimizer(w http.ResponseWriter, r *http.Request
 }
 
 func (api *communityAPIImpl) toggleCommunityLock(w http.ResponseWriter, r *http.Request) {
-	// unlock if locked
 	user := r.Context().Value(middleware.CtxUser).(*model.User)
 	assignments, err := api.service.ToggleCommunityLock(r.Context(), user)
 	if err != nil {
@@ -144,4 +145,45 @@ func (api *communityAPIImpl) getCommunitySettings(w http.ResponseWriter, r *http
 	}
 
 	render.JSON(w, r, settings)
+}
+
+func (api *communityAPIImpl) downloadCommunityData(w http.ResponseWriter, r *http.Request) {
+	data, err := api.service.DownloadCommunityData(r.Context())
+
+	if err != nil {
+		log.Printf("Failed to get community data for download: %v", err)
+		http.Error(w, "Error getting community data", http.StatusInternalServerError)
+		return
+	}
+
+	jsonBytes, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		http.Error(w, "failed to marshal json", http.StatusInternalServerError)
+		return
+	}
+
+	// Set headers to prompt a download
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Disposition", `attachment; filename="community_data.json"`)
+
+	w.Write(jsonBytes)
+}
+
+func (api *communityAPIImpl) uploadCommunityData(w http.ResponseWriter, r *http.Request) {
+	req := &model.AssignmentUpload{}
+
+	if err := render.Decode(r, req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	assignments, err := api.service.UploadCommunityData(r.Context(), req)
+
+	if err != nil {
+		log.Printf("Failed to overwrite community assignments: %v", err)
+		http.Error(w, "Error setting community data", http.StatusInternalServerError)
+		return
+	}
+
+	render.JSON(w, r, assignments)
 }

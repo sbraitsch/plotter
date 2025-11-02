@@ -22,23 +22,25 @@ export default function InfoModal({ isOpen, onClose }: InfoModalProps) {
 
         <div className="info-content">
           <ul>
+            <li>1 = Highest Priority, 53 = Lowest Priority</li>
             <li>
-              Clicking a house on the map will assign the lowest free priority
-              to it
+              Clicking a house on the map will assign the highest free priority
+              to it.
             </li>
             <li>
               Clicking on a house that is already prioritized will remove the
-              priority
+              priority.
             </li>
             <li>
-              Any changes are only persisted when clicking the Sync button
+              Any local changes are only persisted after clicking the Sync
+              button.
             </li>
             <li>
               When using Target Mode, clicking on a house will open a window
-              where you can manually input a priority
+              where you can manually input a priority.
             </li>
             <li>
-              Hovering over a house will show you a list of interested people
+              Hovering over a house will show you a list of interested people.
             </li>
           </ul>
         </div>

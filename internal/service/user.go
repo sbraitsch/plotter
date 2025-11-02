@@ -18,6 +18,7 @@ type UserService interface {
 	Validate(ctx context.Context) (*model.ValidatedUser, error)
 	RegisterUser(code string, oauth *oauth2.Config) (string, error)
 	UpdateMappings(ctx context.Context, mappings map[int]int) (*model.CommunityData, error)
+	SetNote(ctx context.Context, note string) error
 	ListAvailableCommunities(ctx context.Context) ([]model.Community, error)
 }
 
@@ -50,6 +51,7 @@ func (s *userServiceImpl) Validate(ctx context.Context) (*model.ValidatedUser, e
 	return &model.ValidatedUser{
 		Battletag: user.Battletag,
 		Char:      user.Char,
+		Note:      user.Note,
 		IsAdmin:   user.CommunityRank <= user.Community.OfficerRank,
 		Community: model.ValidatedCommunity{
 			Id:     user.Community.Id,
@@ -111,4 +113,19 @@ func (s *userServiceImpl) UpdateMappings(ctx context.Context, mappings map[int]i
 		return nil, err
 	}
 	return community, nil
+}
+
+func (s *userServiceImpl) SetNote(ctx context.Context, note string) error {
+
+	user, ok := ctx.Value(middleware.CtxUser).(*model.User)
+	if !ok || len(user.Community.Id) == 0 {
+		return fmt.Errorf("community not found in context")
+	}
+
+	err := s.storage.SetNote(ctx, user, note)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

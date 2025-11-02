@@ -14,16 +14,17 @@ import (
 
 func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*model.User, error) {
 	var (
-		battletag, char, communityName, communityID, accessToken sql.NullString
-		officerRank, communityRank                               sql.NullInt32
-		locked                                                   sql.NullBool
-		expiry                                                   sql.NullTime
+		battletag, char, note, communityName, communityID, accessToken sql.NullString
+		officerRank, communityRank                                     sql.NullInt32
+		locked                                                         sql.NullBool
+		expiry                                                         sql.NullTime
 	)
 
 	err := s.db.QueryRow(ctx,
 		`SELECT
 			u.battletag,
 			u.char,
+			u.note,
 			u.community_id,
 			c.name AS community_name,
 			c.officer_rank,
@@ -39,6 +40,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 	).Scan(
 		&battletag,
 		&char,
+		&note,
 		&communityID,
 		&communityName,
 		&officerRank,
@@ -55,6 +57,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 	user := &model.User{
 		Battletag: battletag.String,
 		Char:      char.String,
+		Note:      note.String,
 		Community: model.UserCommunity{
 			Id:          communityID.String,
 			Name:        communityName.String,
@@ -82,6 +85,41 @@ func (s *StorageClient) RegisterUser(ctx context.Context, battletag string, toke
 		return "", err
 	}
 	return sessionToken, nil
+}
+
+func (s *StorageClient) RegisterManualUsers(ctx context.Context, assignments []model.Assignment, communityID string) error {
+	sessionToken := uuid.New().String()
+
+	var memberRank int
+	err := s.db.QueryRow(ctx, `SELECT member_rank FROM communities WHERE id = $1`, communityID).Scan(&memberRank)
+	if err != nil {
+		return fmt.Errorf("failed to fetch community member_rank: %w", err)
+	}
+	for _, a := range assignments {
+		if a.Battletag == "" {
+			continue
+		}
+		_, err := s.db.Exec(ctx, `
+			INSERT INTO users (battletag, char, community_id, community_rank, access_token, expiry, session_id)
+			VALUES ($1, $2, $3, $4, gen_random_uuid()::text, NOW() + INTERVAL '24 hours', $5)
+			ON CONFLICT (battletag) DO NOTHING
+		`, a.Battletag, a.Character, communityID, memberRank, sessionToken)
+
+		if err != nil {
+			log.Printf("Failed to insert user %s: %v", a.Battletag, err)
+			return err
+		}
+	}
+	return nil
+}
+
+func (s *StorageClient) SetNote(ctx context.Context, user *model.User, note string) error {
+	_, err := s.db.Exec(ctx, `UPDATE users SET note=$1 WHERE battletag=$2`, note, user.Battletag)
+	if err != nil {
+		log.Printf("failed to set user note: %v", err)
+		return err
+	}
+	return nil
 }
 
 func (s *StorageClient) SavePlotMappings(ctx context.Context, user *model.User, mappings map[int]int) error {

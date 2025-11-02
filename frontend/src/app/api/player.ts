@@ -12,7 +12,7 @@ export interface PlayerData {
 }
 
 export interface PlayerUpdate {
-  battletag: string;
+  note: string;
   plotData: Record<number, number>;
 }
 

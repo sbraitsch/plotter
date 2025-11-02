@@ -18,6 +18,8 @@ type CommunityService interface {
 	GetAssignments(ctx context.Context, communityId string) ([]model.Assignment, error)
 	SetCommunitySettings(ctx context.Context, communityId string, req *model.CommunityRankRequest) error
 	GetCommunitySettings(ctx context.Context, communityId string) (*model.Settings, error)
+	DownloadCommunityData(ctx context.Context) (*model.FullCommunityData, error)
+	UploadCommunityData(ctx context.Context, data *model.AssignmentUpload) ([]model.Assignment, error)
 }
 
 type communityServiceImpl struct {
@@ -39,6 +41,47 @@ func (s *communityServiceImpl) GetCommunityData(ctx context.Context) (*model.Com
 		return nil, err
 	}
 	return community, nil
+}
+
+func (s *communityServiceImpl) DownloadCommunityData(ctx context.Context) (*model.FullCommunityData, error) {
+	user, ok := ctx.Value(middleware.CtxUser).(*model.User)
+	if !ok || len(user.Community.Id) == 0 {
+		return nil, fmt.Errorf("community not found in context")
+	}
+	community, err := s.storage.GetFullCommunityData(ctx, user)
+	if err != nil {
+		log.Printf("Failed to retrieve community data from database: %v", err)
+		return nil, err
+	}
+	return community, nil
+}
+
+func (s *communityServiceImpl) UploadCommunityData(ctx context.Context, data *model.AssignmentUpload) ([]model.Assignment, error) {
+	user := ctx.Value(middleware.CtxUser).(*model.User)
+	assignments := make([]model.Assignment, 0, len(data.Members))
+	for _, member := range data.Members {
+		if member.Assignment.Battletag == "" {
+			continue
+		}
+		assignments = append(assignments, model.Assignment{
+			Battletag: member.Assignment.Battletag,
+			Score:     member.Assignment.Score,
+			Character: member.Assignment.Character,
+			Plot:      member.Assignment.Plot,
+		})
+	}
+
+	if len(assignments) > 53 {
+		return nil, fmt.Errorf("too many assignments. community is overcrowded.")
+	}
+	err := s.storage.RegisterManualUsers(ctx, assignments, user.Community.Id)
+	err = s.storage.PersistAndLock(ctx, assignments, user.Community.Id)
+	if err != nil {
+		log.Printf("Error persisting overwritten assignments: %v", err)
+		return nil, err
+	}
+	log.Printf("Community %s locked.", user.Community.Id)
+	return assignments, nil
 }
 
 func (s *communityServiceImpl) JoinCommunity(ctx context.Context, communityId string) (string, error) {
