@@ -68,6 +68,9 @@ export default function MapComponent() {
   const player = playerData?.find(
     (player) => player.battletag === user?.battletag,
   );
+  const assignment = plotAssignments?.find(
+    (player) => player.btag === user?.battletag,
+  )?.plot;
 
   const rerenderFeatures = () => {
     if (!mapInstanceRef.current) return;
@@ -158,15 +161,15 @@ export default function MapComponent() {
   useEffect(() => {
     async function fetchData() {
       try {
-        if (user?.community.locked) {
-          const data = await getAssignedPlots();
-          setPlotAssignments(data);
-        }
         const data = await getCommunityData();
         setPlayerData(data);
         playerRef.current = data?.find(
           (player) => player.battletag === user?.battletag,
         );
+        if (user?.community.locked) {
+          const data = await getAssignedPlots();
+          setPlotAssignments(data);
+        }
       } catch (err: any) {
         console.error(err);
       }
@@ -274,6 +277,7 @@ export default function MapComponent() {
           targetedMode={targetedMode}
           setTargetedMode={setTargetedMode}
           contextDirty={contextDirty}
+          assignment={assignment}
         />
         {/* Map Container */}
         <div ref={mapRef} id="map" className="map-container-style" />

@@ -56,6 +56,7 @@ func (s *userServiceImpl) Validate(ctx context.Context) (*model.ValidatedUser, e
 		Community: model.ValidatedCommunity{
 			Id:     user.Community.Id,
 			Name:   user.Community.Name,
+			Realm:  user.Community.Realm,
 			Locked: user.Community.Locked,
 		},
 	}, nil

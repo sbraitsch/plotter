@@ -29,6 +29,7 @@ import {
   optimizeAndLock,
   overwriteAssignments,
 } from "../api/optimizer";
+import { deslugRealm } from "../utils";
 import InfoModal from "./InfoModal";
 
 interface ControlPanelProps {
@@ -40,6 +41,7 @@ interface ControlPanelProps {
   targetedMode: boolean;
   setTargetedMode: React.Dispatch<React.SetStateAction<boolean>>;
   contextDirty: boolean;
+  assignment: number | undefined;
 }
 
 export default function ControlPanel({
@@ -51,6 +53,7 @@ export default function ControlPanel({
   targetedMode,
   setTargetedMode,
   contextDirty,
+  assignment,
 }: ControlPanelProps) {
   const { setUser } = useAuth();
   const [showNotification, setShowNotification] = useState(false);
@@ -114,9 +117,6 @@ export default function ControlPanel({
       async function getAssigments() {
         const results = await getOptimizedAssignments();
         updatePlotAssignments(results);
-        setNotificationContent("Previewing optimized assignments.");
-        setShowNotification(true);
-        setTimeout(() => setShowNotification(false), 5000);
       }
       getAssigments();
     }
@@ -246,9 +246,16 @@ export default function ControlPanel({
           )}
         </div>
         {user?.community.locked ? (
-          <div className="lock-notice">
-            An admin has locked this community. Plot selection has been
-            disabled.
+          <div className="lock-notice-container">
+            <div className="lock-notice-content">
+              <img src="house_sold.png" alt="Locked" className="lock-icon" />
+              <span className="lock-notice">Your new address is:</span>
+              <span className="assignment-text">
+                {user.char} <br />
+                {assignment} {user.community.name} Ave. <br />
+                29693 {deslugRealm(user.community.realm)}
+              </span>
+            </div>
           </div>
         ) : (
           <PlotGrid player={playerData} updatePlayerPlot={updatePlayerPlot} />
@@ -312,27 +319,34 @@ export default function ControlPanel({
             </>
           )}
         </div>
-        <div className="textarea-wrapper">
-          <textarea
-            id="info"
-            className="info-textarea"
-            placeholder="Add a note"
-            value={note}
-            onChange={handleNoteChange}
-            spellCheck={false}
-          ></textarea>
-          <label htmlFor="info" className="info-label">
-            <NotebookPen />
-          </label>
-        </div>
-        <button
-          className="btn"
-          disabled={!contextDirty && !noteEdited}
-          onClick={handleSync}
-        >
-          <CloudUpload />
-          Sync
-        </button>
+        {!isPreviewing ? (
+          <div className="textarea-wrapper">
+            <textarea
+              id="info"
+              className="info-textarea"
+              placeholder="Add a note"
+              value={note}
+              onChange={handleNoteChange}
+              spellCheck={false}
+            ></textarea>
+            <label htmlFor="info" className="info-label">
+              <NotebookPen />
+            </label>
+          </div>
+        ) : (
+          <div className="spacer"></div>
+        )}
+
+        {!user?.community.locked && (
+          <button
+            className="btn"
+            disabled={!contextDirty && !noteEdited}
+            onClick={handleSync}
+          >
+            <CloudUpload />
+            Sync
+          </button>
+        )}
       </div>
       {showNotification &&
         ReactDOM.createPortal(

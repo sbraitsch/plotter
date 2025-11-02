@@ -17,6 +17,7 @@ type UserCommunity struct {
 	Name        string
 	OfficerRank int
 	Locked      bool
+	Realm       string
 }
 type ValidatedUser struct {
 	Battletag string             `json:"battletag"`
@@ -28,5 +29,6 @@ type ValidatedUser struct {
 type ValidatedCommunity struct {
 	Id     string `json:"id"`
 	Name   string `json:"name"`
+	Realm  string `json:"realm"`
 	Locked bool   `json:"locked"`
 }

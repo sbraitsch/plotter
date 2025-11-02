@@ -16,7 +16,6 @@
 .btn-group {
     display: flex;
     gap: 0.5em;
-    flex-wrap: wrap;
     justify-content: flex-end;
 }
 
@@ -131,10 +130,53 @@
     z-index: 10;
 }
 
+.lock-notice-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    font-family: "IM Fell English SC", serif;
+}
+
 .lock-notice {
-    color: gray;
-    font-size: 0.8rem;
-    height: 30%;
+    font-size: 1rem;
+}
+
+.lock-notice-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: center;
+    padding-top: 2rem;
+}
+
+.assignment-text {
+    color: var(--background);
+    border: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease-in-out;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5em 0.3em;
+    font-size: 1rem;
+    font-weight: bold;
+    box-sizing: border-box;
+    width: 100%;
+    user-select: none;
+    background: var(--legendary-card);
+    color: var(--background);
+}
+
+.large-num {
+    font-size: 3rem;
+    width: 100%;
+}
+
+.lock-icon {
+    width: 60%;
 }
 
 @keyframes fadeInOut {

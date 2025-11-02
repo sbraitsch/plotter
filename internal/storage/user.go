@@ -14,10 +14,10 @@ import (
 
 func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*model.User, error) {
 	var (
-		battletag, char, note, communityName, communityID, accessToken sql.NullString
-		officerRank, communityRank                                     sql.NullInt32
-		locked                                                         sql.NullBool
-		expiry                                                         sql.NullTime
+		battletag, char, note, communityName, communityID, realm, accessToken sql.NullString
+		officerRank, communityRank                                            sql.NullInt32
+		locked                                                                sql.NullBool
+		expiry                                                                sql.NullTime
 	)
 
 	err := s.db.QueryRow(ctx,
@@ -29,6 +29,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 			c.name AS community_name,
 			c.officer_rank,
 			c.locked,
+			c.realm,
 			u.community_rank,
 			u.access_token,
 			u.expiry
@@ -45,6 +46,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 		&communityName,
 		&officerRank,
 		&locked,
+		&realm,
 		&communityRank,
 		&accessToken,
 		&expiry,
@@ -63,6 +65,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 			Name:        communityName.String,
 			OfficerRank: int(officerRank.Int32),
 			Locked:      locked.Bool,
+			Realm:       realm.String,
 		},
 		CommunityRank: int(communityRank.Int32),
 		AccessToken:   accessToken.String,

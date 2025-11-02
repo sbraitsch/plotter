@@ -1,3 +1,5 @@
+@import url("https://fonts.googleapis.com/css2?family=IM+Fell+English+SC&display=swap");
+
 :root {
     --background: #050711;
     --foreground: #ededed;
@@ -19,6 +21,13 @@
     );
 
     --petrol: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
+
+    --legendary-card: linear-gradient(
+        135deg,
+        #ffeb7f 0%,
+        #ffc63a 50%,
+        #b36b00 100%
+    );
 }
 
 html,
@@ -26,7 +35,6 @@ body {
     max-width: 100vw;
     overflow-x: hidden;
     font-size: 1.25em;
-    font-family: var(--font-geist-sans), sans-serif;
 }
 
 body {

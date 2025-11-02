@@ -17,3 +17,14 @@ export const getLowestFreePriority = (player: PlayerData) => {
 
   return priority;
 };
+
+export const deslugRealm = (slug: string): string => {
+  return slug
+    .split("-")
+    .map((part) =>
+      part.toUpperCase() === part
+        ? part
+        : part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+    )
+    .join("-");
+};
