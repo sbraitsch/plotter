@@ -3,17 +3,17 @@
 import React, { useState, useEffect } from "react";
 import "@/styles/CommunitySelection.css";
 import { BASE_URL, fetchWithAuth } from "../api";
-import { useAuth, User } from "../context/AuthContext";
-import { Community } from "../api/validate";
+import { useAuth } from "../context/AuthContext";
 
 interface CommunityResponse {
   id: string;
   name: string;
   realm: string;
   locked: boolean;
+  finalized: boolean;
 }
 const CommunitySelection: React.FC = () => {
-  const { user, setUser } = useAuth();
+  const { setUser } = useAuth();
   const [options, setOptions] = useState<CommunityResponse[]>([]);
   const [selected, setSelected] = useState<CommunityResponse | undefined>(
     undefined,
@@ -66,6 +66,7 @@ const CommunitySelection: React.FC = () => {
             name: com.name,
             realm: com.realm,
             locked: com.locked,
+            finalized: com.finalized,
           },
         };
       });

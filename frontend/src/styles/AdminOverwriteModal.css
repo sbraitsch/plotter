@@ -1,0 +1,94 @@
+.player-list-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: hidden;
+    user-select: none;
+}
+
+.player-list-title {
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 1rem;
+}
+
+.player-list {
+    list-style: none;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--sync-light) transparent;
+    max-height: 40vh;
+    width: 100%;
+}
+
+.hint {
+    border-left: 4px solid #f0ad4e;
+    background-color: #fff3cd;
+    color: #856404;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-align: left;
+    list-style-position: inside;
+    padding: 6px;
+}
+
+.hint ul {
+    list-style-type: disc;
+    margin: 0;
+}
+
+.hint ul li {
+    margin-bottom: 0.5rem;
+}
+
+/* Webkit browsers (Chrome, Edge, Safari) */
+.player-list::-webkit-scrollbar {
+    width: 6px; /* thin scrollbar */
+}
+
+.player-list::-webkit-scrollbar-track {
+    background: transparent; /* hide track background */
+}
+
+.player-list::-webkit-scrollbar-thumb {
+    background-color: white; /* scrollbar color */
+    border-radius: 3px;
+}
+
+.player-list::-webkit-scrollbar-button {
+    display: none;
+    height: 0;
+    width: 0;
+}
+
+.player-list::-webkit-scrollbar-thumb:hover {
+    background-color: #e0e0e0; /* optional hover effect */
+    cursor: grab;
+}
+
+.player-list-item {
+    padding: 5px 5px;
+    cursor: pointer;
+    color: white;
+    transition: all 0.2s ease-in-out;
+    border-radius: 5px;
+    background: linear-gradient(135deg, #0a1f33 0%, #112f49 100%);
+    margin: 0.5em;
+    font-size: 0.9rem;
+    display: flex;
+    justify-content: space-between;
+}
+
+.player-list-item:hover {
+    background: var(--sync);
+    box-shadow: 0 0 6px var(--sync);
+    color: var(--background);
+}
+
+.player-list-item.selected {
+    background: none;
+    background-color: var(--bnet-blue);
+    color: white;
+    font-weight: bold;
+}

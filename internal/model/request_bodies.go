@@ -15,3 +15,9 @@ type AssignmentUpload struct {
 		Assignment Assignment `json:"assignment"`
 	} `json:"members"`
 }
+
+type SingleAssignmentRequest struct {
+	Battletag string `json:"btag"`
+	Char      string `json:"char"`
+	PlotId    int    `json:"plot"`
+}

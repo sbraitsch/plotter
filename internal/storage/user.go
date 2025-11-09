@@ -16,7 +16,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 	var (
 		battletag, char, note, communityName, communityID, realm, accessToken sql.NullString
 		officerRank, communityRank                                            sql.NullInt32
-		locked                                                                sql.NullBool
+		locked, finalized                                                     sql.NullBool
 		expiry                                                                sql.NullTime
 	)
 
@@ -29,6 +29,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 			c.name AS community_name,
 			c.officer_rank,
 			c.locked,
+			c.finalized,
 			c.realm,
 			u.community_rank,
 			u.access_token,
@@ -46,6 +47,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 		&communityName,
 		&officerRank,
 		&locked,
+		&finalized,
 		&realm,
 		&communityRank,
 		&accessToken,
@@ -66,6 +68,7 @@ func (s *StorageClient) GetUserByToken(ctx context.Context, token string) (*mode
 			OfficerRank: int(officerRank.Int32),
 			Locked:      locked.Bool,
 			Realm:       realm.String,
+			Finalized:   finalized.Bool,
 		},
 		CommunityRank: int(communityRank.Int32),
 		AccessToken:   accessToken.String,

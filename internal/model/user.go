@@ -17,6 +17,7 @@ type UserCommunity struct {
 	Name        string
 	OfficerRank int
 	Locked      bool
+	Finalized   bool
 	Realm       string
 }
 type ValidatedUser struct {
@@ -27,8 +28,9 @@ type ValidatedUser struct {
 	Community ValidatedCommunity `json:"community"`
 }
 type ValidatedCommunity struct {
-	Id     string `json:"id"`
-	Name   string `json:"name"`
-	Realm  string `json:"realm"`
-	Locked bool   `json:"locked"`
+	Id        string `json:"id"`
+	Name      string `json:"name"`
+	Realm     string `json:"realm"`
+	Locked    bool   `json:"locked"`
+	Finalized bool   `json:"finalized"`
 }

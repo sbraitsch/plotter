@@ -28,6 +28,7 @@ import {
 import MapHoverPopup from "./Tooltip";
 import { Assignment, getAssignedPlots } from "../api/optimizer";
 import TargetedModal from "./TargetedModal";
+import AdminOverwriteModal from "./AdminOverwriteModal";
 
 /**
  * OpenLayers Map Component for displaying a static image with clickable pins.
@@ -40,12 +41,18 @@ export default function MapComponent() {
   const [contextDirty, setContextDirty] = useState(false);
 
   const [isTargetedModalOpen, setIsTargetedModalOpen] = useState(false);
+  const [isAdminOverwriteModalOpen, setIsAdminOverwriteModalOpen] =
+    useState(false);
   const [selectedPlot, setSelectedPlot] = useState<number | undefined>(
     undefined,
   );
   const handleOpenModal = (plotId: number) => {
     setSelectedPlot(plotId);
     setIsTargetedModalOpen(true);
+  };
+  const handleOpenAdminModal = (plotId: number) => {
+    setSelectedPlot(plotId);
+    setIsAdminOverwriteModalOpen(true);
   };
 
   const handleModalSubmit = async (plot: number, prio: number) => {
@@ -54,8 +61,15 @@ export default function MapComponent() {
     setIsTargetedModalOpen(false);
   };
 
+  const handleAdminModalSubmit = async () => {
+    refreshPlotAssignments();
+    setSelectedPlot(undefined);
+    setIsAdminOverwriteModalOpen(false);
+  };
+
   const { user } = useAuth();
   const lockedRef = useRef(user?.community.locked ?? false);
+  const finalizedRef = useRef(user?.community.finalized ?? false);
 
   const [targetedMode, setTargetedMode] = useState(false);
   const targetedRef = useRef(targetedMode);
@@ -88,8 +102,14 @@ export default function MapComponent() {
   useEffect(() => {
     playerRef.current = player;
     lockedRef.current = user?.community.locked || plotAssignments?.length > 0;
+    finalizedRef.current = user?.community.finalized || false;
     rerenderFeatures();
-  }, [user?.community.locked, playerData, plotAssignments]);
+  }, [
+    user?.community.locked,
+    user?.community.finalized,
+    playerData,
+    plotAssignments,
+  ]);
 
   const clearPlayerMappings = () => {
     setPlayerData((prev) =>
@@ -124,6 +144,11 @@ export default function MapComponent() {
       }),
     );
     setContextDirty(true);
+  };
+
+  const refreshPlotAssignments = async () => {
+    const data = await getAssignedPlots();
+    setPlotAssignments(data);
   };
 
   const updatePlayerPlot = (plotId: number, value: number) => {
@@ -166,7 +191,10 @@ export default function MapComponent() {
         playerRef.current = data?.find(
           (player) => player.battletag === user?.battletag,
         );
-        if (user?.community.locked) {
+        if (
+          user?.community.finalized ||
+          (user?.isAdmin && user.community.locked)
+        ) {
           const data = await getAssignedPlots();
           setPlotAssignments(data);
         }
@@ -245,22 +273,24 @@ export default function MapComponent() {
     }
 
     map.on("click", function (evt) {
-      let nextPrio = getLowestFreePriority(playerRef.current!);
-      map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
-        if (
-          feature &&
-          feature.getGeometry()?.getType() === "Point" &&
-          !lockedRef.current
-        ) {
-          const plot = feature.get("plot") as number;
-          if (!targetedRef.current) {
-            updatePlayerPlot(plot, nextPrio);
-            nextPrio++;
-          } else {
-            handleOpenModal(plot);
+      if (finalizedRef.current) return;
+      if (lockedRef.current && !user?.isAdmin) {
+      } else {
+        let nextPrio = getLowestFreePriority(playerRef.current!);
+        map.forEachFeatureAtPixel(evt.pixel, function (feature, layer) {
+          if (feature && feature.getGeometry()?.getType() === "Point") {
+            const plot = feature.get("plot") as number;
+            if (lockedRef.current && user?.isAdmin) {
+              handleOpenAdminModal(plot);
+            } else if (!targetedRef.current) {
+              updatePlayerPlot(plot, nextPrio);
+              nextPrio++;
+            } else {
+              handleOpenModal(plot);
+            }
           }
-        }
-      });
+        });
+      }
     });
   }, [playerData, plotAssignments]);
 
@@ -292,6 +322,17 @@ export default function MapComponent() {
           onSubmit={handleModalSubmit}
           plot={selectedPlot!}
           player={playerRef.current}
+        />
+      )}
+      {playerRef.current && (
+        <AdminOverwriteModal
+          isOpen={isAdminOverwriteModalOpen}
+          onClose={() => setIsAdminOverwriteModalOpen(false)}
+          onSubmit={handleAdminModalSubmit}
+          plot={selectedPlot!}
+          player={playerRef.current}
+          assignments={plotAssignments}
+          communityMembers={playerData}
         />
       )}
     </div>

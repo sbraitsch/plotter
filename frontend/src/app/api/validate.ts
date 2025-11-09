@@ -13,6 +13,7 @@ export type Community = {
   name: string;
   realm: string;
   locked: boolean;
+  finalized: boolean;
 };
 
 export async function validateSession(): Promise<ValidateResponse> {

@@ -15,6 +15,7 @@ import {
   Download,
   Upload,
   NotebookPen,
+  MapPinCheck,
 } from "lucide-react";
 import PlotGrid from "./PlotGrid";
 import { useAuth, User } from "../context/AuthContext";
@@ -25,6 +26,7 @@ import ReactDOM from "react-dom";
 import {
   Assignment,
   downloadAssignmentData,
+  finalizeAssignments,
   getOptimizedAssignments,
   optimizeAndLock,
   overwriteAssignments,
@@ -113,7 +115,7 @@ export default function ControlPanel({
     if (!isPreviewing && !user?.community.locked) {
       updatePlotAssignments([]);
       setIsPreviewing(false);
-    } else if (isPreviewing) {
+    } else if (isPreviewing && !user?.community.locked) {
       async function getAssigments() {
         const results = await getOptimizedAssignments();
         updatePlotAssignments(results);
@@ -121,6 +123,21 @@ export default function ControlPanel({
       getAssigments();
     }
   }, [isPreviewing]);
+
+  const finalize = async () => {
+    setUser((prev) =>
+      prev
+        ? {
+            ...prev,
+            community: {
+              ...prev.community,
+              finalized: !prev.community.finalized,
+            },
+          }
+        : prev,
+    );
+    finalizeAssignments();
+  };
 
   const triggerDownload = async () => {
     downloadAssignmentData();
@@ -154,6 +171,7 @@ export default function ControlPanel({
   };
 
   const lockCommunity = async () => {
+    if (user?.community.finalized) return;
     const results = await optimizeAndLock();
     if (!user?.community.locked) {
       updatePlotAssignments(results);
@@ -207,21 +225,33 @@ export default function ControlPanel({
           <div className="btag-community">&lt;{user?.community.name}&gt;</div>
         </div>
         <div className="btn-group">
-          {isPreviewing && user?.community.locked && (
+          {user?.isAdmin && (
             <>
-              <button className="admin-btn" onClick={triggerDownload}>
-                <Download />
-              </button>
-              <button className="admin-btn" onClick={triggerUpload}>
-                <Upload />
+              {user?.community.locked && (
+                <>
+                  <button
+                    className={`admin-btn ${user.community.finalized ? "btn-on" : ""}`}
+                    onClick={finalize}
+                  >
+                    <MapPinCheck />
+                  </button>
+                  <button className="admin-btn" onClick={triggerDownload}>
+                    <Download />
+                  </button>
+                  <button className="admin-btn" onClick={triggerUpload}>
+                    <Upload />
+                  </button>
+                </>
+              )}
+              <button
+                className={`admin-btn ${user.community.locked ? "btn-on" : ""}`}
+                onClick={lockCommunity}
+              >
+                {user?.community.locked ? <Lock /> : <Unlock />}
               </button>
             </>
           )}
-          {isPreviewing && (
-            <button className="admin-btn" onClick={lockCommunity}>
-              {user?.community.locked ? <Unlock /> : <Lock />}
-            </button>
-          )}
+
           {!user?.community.locked && !isPreviewing && (
             <button
               className="admin-btn"
@@ -245,7 +275,7 @@ export default function ControlPanel({
             </button>
           )}
         </div>
-        {user?.community.locked ? (
+        {user?.community.finalized ? (
           <div className="lock-notice-container">
             <div className="lock-notice-content">
               <img src="house_sold.png" alt="Locked" className="lock-icon" />
@@ -256,6 +286,11 @@ export default function ControlPanel({
                 29693 {deslugRealm(user.community.realm)}
               </span>
             </div>
+          </div>
+        ) : user?.community.locked ? (
+          <div className="lock-notice-container greyed">
+            This community is currently locked. No further changes to plot
+            prioritization can be made at this time.
           </div>
         ) : (
           <PlotGrid player={playerData} updatePlayerPlot={updatePlayerPlot} />
@@ -319,7 +354,7 @@ export default function ControlPanel({
             </>
           )}
         </div>
-        {!isPreviewing ? (
+        {!user?.community.locked ? (
           <div className="textarea-wrapper">
             <textarea
               id="info"

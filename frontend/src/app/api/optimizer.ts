@@ -7,6 +7,12 @@ export interface Assignment {
   score: number;
 }
 
+export interface OverwriteAssignment {
+  btag: string;
+  char: string;
+  plot: number;
+}
+
 export async function getOptimizedAssignments(): Promise<Assignment[]> {
   try {
     const url = `${BASE_URL}/community/optimize`;
@@ -14,6 +20,18 @@ export async function getOptimizedAssignments(): Promise<Assignment[]> {
     return data;
   } catch (err) {
     throw new Error("Optimizer failed");
+  }
+}
+
+export async function finalizeAssignments(): Promise<void> {
+  try {
+    const url = `${BASE_URL}/community/finalize`;
+    await fetchWithAuth(url, {
+      method: "POST",
+    });
+    return;
+  } catch (err) {
+    throw new Error("Finalizing failed");
   }
 }
 
@@ -63,6 +81,21 @@ export async function overwriteAssignments(json: any): Promise<Assignment[]> {
     return data;
   } catch (err) {
     throw new Error("Upload failed");
+  }
+}
+
+export async function overwriteSingleAssignment(
+  body: OverwriteAssignment,
+): Promise<void> {
+  try {
+    const url = `${BASE_URL}/community/assignments`;
+    await fetchWithAuth<Assignment[]>(url, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+    return;
+  } catch (err) {
+    throw new Error("Overwrite failed");
   }
 }
 

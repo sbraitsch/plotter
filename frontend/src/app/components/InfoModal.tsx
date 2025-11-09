@@ -1,6 +1,4 @@
-import { useState, ChangeEvent } from "react";
 import "@/styles/AdminModal.css";
-import { handleClientScriptLoad } from "next/script";
 
 interface InfoModalProps {
   isOpen: boolean;

@@ -11,6 +11,21 @@ import (
 	"github.com/sbraitsch/plotter/internal/model"
 )
 
+func (s *StorageClient) FinalizeCommunity(ctx context.Context, communityId string) error {
+	_, err := s.db.Exec(ctx,
+		`UPDATE communities
+				 SET finalized = NOT finalized
+				 WHERE id = $1`,
+		communityId,
+	)
+
+	if err != nil {
+		log.Printf("Failed to update community values for community %s:%v", communityId, err)
+		return fmt.Errorf("Information could not be persisted.")
+	}
+	return nil
+}
+
 func (s *StorageClient) GetCommunityData(ctx context.Context, user *model.User) (*model.CommunityData, error) {
 	rows, err := s.db.Query(ctx, `
         SELECT u.battletag, u.char, pm.plot_id, pm.priority
@@ -291,6 +306,51 @@ func (s *StorageClient) GetAssignments(ctx context.Context, communityId string) 
 	}
 
 	return assignments, nil
+}
+
+func (s *StorageClient) SetAssignment(ctx context.Context, req *model.SingleAssignmentRequest, communityId string) error {
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return fmt.Errorf("failed to begin assignment transaction: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	err = s.RegisterManualUsers(ctx, []model.Assignment{model.Assignment{
+		Character: req.Char,
+		Battletag: req.Battletag,
+		Plot:      req.PlotId,
+		Score:     0,
+	}}, communityId)
+
+	if err != nil {
+		log.Printf("Failed to register new community member %s: %v", req.Battletag, err)
+		return err
+	}
+
+	_, err = s.db.Exec(ctx, `
+			DELETE FROM assignments
+			WHERE plot_id = $1 AND community_id = $2
+		`, req.PlotId, communityId)
+	if err != nil {
+		log.Printf("Failed to remove plot assignment for %s: %v", req.Battletag, err)
+		return err
+	}
+
+	_, err = s.db.Exec(ctx, `
+		INSERT INTO assignments (battletag, plot_id, char, community_id, plot_score)
+		VALUES ($1, $2, $3, $4, 0)
+		ON CONFLICT (battletag)
+		DO UPDATE SET
+			plot_id = EXCLUDED.plot_id,
+			char = EXCLUDED.char,
+			plot_score = 0
+`, req.Battletag, req.PlotId, req.Char, communityId)
+	if err != nil {
+		log.Printf("Failed to update plot assignment for %s to %d: %v", req.Battletag, req.PlotId, err)
+		return err
+	}
+
+	return nil
 }
 
 func (s *StorageClient) InsertGuilds(ctx context.Context, guilds []model.Community) ([]model.Community, error) {

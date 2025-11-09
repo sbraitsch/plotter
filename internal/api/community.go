@@ -32,12 +32,14 @@ func (api *communityAPIImpl) Routes(tmw, amw func(http.Handler) http.Handler) ch
 		user.Use(tmw)
 		user.Get("/", api.getCommunityData)
 		user.Post("/join/{id}", api.joinCommunity)
+		user.Get("/assignments", api.getAssignments)
 	})
 
 	r.Group(func(admin chi.Router) {
 		admin.Use(amw)
+		admin.Post("/finalize", api.finalizeCommunity)
 		admin.Get("/optimize", api.runOptimizer)
-		admin.Get("/assignments", api.getAssignments)
+		admin.Post("/assignments", api.setSingleAssignment)
 		admin.Post("/lock", api.toggleCommunityLock)
 		admin.Post("/config", api.setCommunitySettings)
 		admin.Get("/config", api.getCommunitySettings)
@@ -46,6 +48,16 @@ func (api *communityAPIImpl) Routes(tmw, amw func(http.Handler) http.Handler) ch
 	})
 
 	return r
+}
+
+func (api *communityAPIImpl) finalizeCommunity(w http.ResponseWriter, r *http.Request) {
+	err := api.service.FinalizeCommunity(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to finalize community data", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *communityAPIImpl) getCommunityData(w http.ResponseWriter, r *http.Request) {
@@ -106,6 +118,23 @@ func (api *communityAPIImpl) getAssignments(w http.ResponseWriter, r *http.Reque
 	}
 
 	render.JSON(w, r, assignments)
+}
+
+func (api *communityAPIImpl) setSingleAssignment(w http.ResponseWriter, r *http.Request) {
+	user := r.Context().Value(middleware.CtxUser).(*model.User)
+	req := &model.SingleAssignmentRequest{}
+	if err := render.Decode(r, req); err != nil {
+		http.Error(w, "Invalid request body", http.StatusBadRequest)
+		return
+	}
+	err := api.service.SetAssignment(r.Context(), req, user.Community.Id)
+
+	if err != nil {
+		http.Error(w, "Failed to set plot assignment", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
 
 func (api *communityAPIImpl) setCommunitySettings(w http.ResponseWriter, r *http.Request) {

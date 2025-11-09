@@ -12,10 +12,12 @@ import (
 )
 
 type CommunityService interface {
+	FinalizeCommunity(ctx context.Context) error
 	GetCommunityData(ctx context.Context) (*model.CommunityData, error)
 	JoinCommunity(ctx context.Context, communityId string) (string, error)
 	ToggleCommunityLock(ctx context.Context, user *model.User) ([]model.Assignment, error)
 	GetAssignments(ctx context.Context, communityId string) ([]model.Assignment, error)
+	SetAssignment(ctx context.Context, req *model.SingleAssignmentRequest, communityId string) error
 	SetCommunitySettings(ctx context.Context, communityId string, req *model.CommunityRankRequest) error
 	GetCommunitySettings(ctx context.Context, communityId string) (*model.Settings, error)
 	DownloadCommunityData(ctx context.Context) (*model.FullCommunityData, error)
@@ -28,6 +30,19 @@ type communityServiceImpl struct {
 
 func NewCommunityService(storage *storage.StorageClient) CommunityService {
 	return &communityServiceImpl{storage: storage}
+}
+
+func (s *communityServiceImpl) FinalizeCommunity(ctx context.Context) error {
+	user, ok := ctx.Value(middleware.CtxUser).(*model.User)
+	if !ok || len(user.Community.Id) == 0 {
+		return fmt.Errorf("community not found in context")
+	}
+	err := s.storage.FinalizeCommunity(ctx, user.Community.Id)
+	if err != nil {
+		log.Printf("Failed to finalize community: %v", err)
+	}
+
+	return nil
 }
 
 func (s *communityServiceImpl) GetCommunityData(ctx context.Context) (*model.CommunityData, error) {
@@ -145,6 +160,10 @@ func (s *communityServiceImpl) ToggleCommunityLock(ctx context.Context, user *mo
 
 func (s *communityServiceImpl) GetAssignments(ctx context.Context, communityId string) ([]model.Assignment, error) {
 	return s.storage.GetAssignments(ctx, communityId)
+}
+
+func (s *communityServiceImpl) SetAssignment(ctx context.Context, req *model.SingleAssignmentRequest, communityId string) error {
+	return s.storage.SetAssignment(ctx, req, communityId)
 }
 
 func (s *communityServiceImpl) SetCommunitySettings(ctx context.Context, communityId string, req *model.CommunityRankRequest) error {
